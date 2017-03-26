@@ -1,0 +1,71 @@
+This is a loose collection of tools I've used for making my "Un-Worked Design" patch series. They perform various esoteric and usually game-specific tasks mostly related to finding, reporting, and reverting changes in games published by Working Designs. I've also included my raw, unformatted, unhelpful, and generally embarrassing hacking notes for each game in the "notes" folder.
+
+These are almost all one-off utilities that weren't intended to be used once their purpose was served, let alone publicly distributed, and the code is often incomprehensible if you don't already know what the program is supposed to be doing. I'm mostly uploading them as a minimal form of documentation on these games' data formats. In most cases, doing anything useful with these will require commenting and uncommenting parts of the code, dealing with hardcoded offsets and filenames, etc.
+
+Also note that after the hacking work was done, many of these tools were converted to print Mediawiki-formatted tables of changes for the TCRF articles I made documenting the changes.
+
+To build all of these, run make. Run "make [toolname]" to build an individual tool.
+
+Here's an overview of the tools:
+
+*** GENERIC ***
+chngsrch: Searches two files for bytes which have increased by a specified
+          amount. Intended as a poor-man's cheat search for Mednafen
+          savestates, since its actual cheat search is broken.
+hucdism: Extremely basic disassembler for the HuC6280.
+pngcompare: Pixel-by-pixel PNG comparison utility.
+relsearch: Simple relative pattern searcher.
+sampcm: Converts raw Sega CD sign-and-magnitude PCM to signed.
+tablerip: Extracts tables of C-style strings.
+
+*** ALUNDRA ***
+aluncmp: Reads and compares enemy stats from BALANCE.BIN.
+alundat: Splits the main data file into its component subchunks.
+
+*** ELEMENTAL GEARBOLT ***
+gearbolt_decmp: Decompressor for Elemental Gearbolt's compressed EXE.
+
+*** EXILE ***
+exilestats: Enemy stat search/compare.
+
+*** EXILE: WICKED PHENOMENON ***
+ex2enemy: Enemy stat search/compare.
+
+*** LUNAR: ETERNAL BLUE ***
+blockcopy: Searches battle scripts for enemy stat changes.
+grp: Filename is "main.cpp", tool name is "copycat", compiled executable is
+     "grp". Does tons of stuff if uncommented correctly.
+     Was originally the only tool, which is why it's so unwieldy.
+itemmaker: Assembles pre-ripped item icons and names (for TCRF page).
+mapcp_eb: Inserts selected chunk from Japanese chunk file into US one.
+          Used to replace certain graphics/tilemaps that were altered in the
+          US release.
+scriptrip: Extracts English dialogue strings from scripts.
+scriptrip_jp: Extracts Japanese dialogue strings from scripts.
+              Requires scriptrip_jp_thingy.txt to convert to Unicode.
+strinsert: Inserts English dialogue strings produced by scriptrip.
+           Does not work for Japanese version.
+
+*** LUNAR: THE SILVER STAR ***
+items_tss: Item stat comparison utility.
+lunardat: Splits indexed data files into subchunks.
+mapcp_tss: Inserts selected chunk from Japanese chunk file into US one.
+           Used to replace certain graphics/tilemaps that were altered in the
+           US release.
+scriptrip_tss: Extracts English dialogue strings from scripts.
+scriptrip_tss_utils: Shared code for some TSS utilities.
+stats_tss: Enemy stat searcher and comparer.
+strinsert_tss: Inserts English dialogue strings produced by scriptrip_tss.
+
+*** MAGIC KNIGHT RAYEARTH ***
+mkr_enemies: Reads and compares enemy stat structs for relevant changes.
+
+*** POPFUL MAIL ***
+popencmp: Compares enemy stats.
+popshcmp: Compares item prices.
+
+*** VAY ***
+vaycmp: Compresses map files.
+vaydecmp: Decompresses map files.
+vayitems: Item stat comparer.
+vaymonsters: Enemy stat comparer.

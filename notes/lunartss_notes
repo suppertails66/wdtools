@@ -1,0 +1,236 @@
+us:
+  FFE5F6: money
+  FFA2F2+: palettes?
+  FFB4C4 = 2b encounter rate (higher = more common)
+    - also at 2246E4?
+  FFB4C8: 4b? RNG
+    - encounters trigger on overworld every step if locked to 00819CCA
+      (next: 67EA8A6A)
+  FFE619: FFFF = no encounters
+    - this is the debug flag byte(?) -- appears to be the xth flag byte
+    - bit 7 set = overrides encounters?
+    - FF = debug menu on start
+bitflag check routine: FF:04C6
+  - D0 = flag:
+    - high 3 bits = bit number
+    - low 5 bits = byte number?
+
+FF:04CC  03 30  BTST    D1,$00(A0,D0)            A0=FFFFE5FA A1=FFFF97F0 A2=002247B4 A3=FFFFA3F2 A4=FFFFE340 A5=FFFFA3F2 A6=FFFFE500 A7=00FFFCE4 D0=0081001F D1=01000007 D2=FFFF011C D3=FFFFFEBB D4=FFFF0089 D5=00000001 D6=0000000C D7=FFFFFF8E Xnzvc
+FF:04D0  4C DF  MOVEM.L (SP)+,{a7-d0}[01 03]     A0=FFFFE5FA A1=FFFF97F0 A2=002247B4 A3=FFFFA3F2 A4=FFFFE340 A5=FFFFA3F2 A6=FFFFE500 A7=00FFFCE4 D0=0081001F D1=01000007 D2=FFFF011C D3=FFFFFEBB D4=FFFF0089 D5=00000001 D6=0000000C D7=FFFFFF8E XnZvc
+FF:04D4  4E 75  RTS                              A0=002258EA A1=FFFF97F0 A2=002247B4 A3=FFFFA3F2 A4=FFFFE340 A5=FFFFA3F2 A6=FFFFE500 A7=00FFFCF0 D0=008100FF D1=01000000 D2=FFFF011C D3=FFFFFEBB D4=FFFF0089 D5=00000001 D6=0000000C D7=FFFFFF8E XnZvc
+; start encounter if zero?
+FF:5666  66 26  BNE     #$26 [FF:568E]           A0=002258EA A1=FFFF97F0 A2=002247B4 A3=FFFFA3F2 A4=FFFFE340 A5=FFFFA3F2 A6=FFFFE500 A7=00FFFCF4 D0=008100FF D1=01000000 D2=FFFF011C D3=FFFFFEBB D4=FFFF0089 D5=00000001 D6=0000000C D7=FFFFFF8E XnZvc
+
+97 E1 AE = アレス
+E0 F0 BF = ルーナ
+CB E0 A5 = ブルグ
+  - in C001.MAP @ 1a1f, 2224, etc.
+  - 6030 = intro text
+    - 11C7 = 村 = 0x2A7
+    - if byte 1 >= 10 and < 0x20?, 16-bit -- subtract 0xF20 to get real index
+    - otherwise, if >= 0x20, subtract 0x20 to get real index
+    - 00 = end of text?
+    - 01 = line break
+    - 02 = text break?
+    - 03 = ?
+    - 04 = portrait? (second byte = character?)
+6171 = nall's first regular lines
+5d33 = ???
+501A jp = 7080 us
+
+what changed at C001 A178 jp, E786 us?
+  - A2CC/E8E4
+  
+jp -- FFCAD6 = some enemy's current hp
+
+stats are located at end of map block 1, between enemy names and nall strings
+  - 0x16 bytes per monster?
+    - 2b starting HP?
+    - 2b max HP?
+    - 2b starting MP?
+    - 2b max MP?
+    - 1b attack
+    - 1b defense
+    - 1b agil
+    - 1b magic def
+    - 1b number of moves
+    - 1b number of attacks
+    - 1b? "away"?
+    - 7b? ???? bitfield???
+
+1d53c-1d576? = some kanji something
+1d830-1d84f = そ
+  - 1bpp, left-to-right, top-to-bottom?
+  - 2 bytes per row, 32 bytes for full character
+start of font = 0x1D010
+  - 0x400 chars = 0x8000 bytes total
+  - plus a duplicate version directly following? = 0x400 - 0x3 chars = 0x7FA0 bytes
+  - us font is in different format (8x16, 0x10 bytes per char), starts at 1D000
+
+CHANGES:
+  - light barrier graphic altered in TOMI.DAT/TOMISUB.BIN
+  - shrine donations 10 -> 100?
+  
+us: MSTART.BIN:
+All program translate Hiroyuki Koyama
+1993 4th october
+
+All program translate Hiroyuki Koyama
+1993 4th october
+
+
+"dummy" in battle chunk for non-battle maps
+
+debug: 664 -> 7D C3, 66E -> 14 DD 21?
+
+SS02:
+  - ~187A = text graphics?
+  - ~2438 = scrolling stuff?
+  - 2B16 = part of tilemap for text?
+    - every 5th byte = number of vertical tiles?
+    - 2b ??? source address??
+    - 1b? numtiles?
+    
+0x54 = bg graphics
+0x58 = monster graphics = 0x38744-0x39C44 us, 0x3799C-0x38E9C jp
+  - the change we care about is somewhere further ahead, but who cares
+  
+C044.MAP
+  - first relevant code difference?: 1686 / 17AE
+  - 194A / 1A7A
+  - 19D8 / 1B10 -- this looks most likely
+    - yep: nop 1b10-1b41 to restore original behavior
+    
+TOMISUB.BIN
+  - font
+    - 0x1D000 / 118784
+  - item names
+    - start = 0x18CEF
+    - end = 0x192F5
+    - 0x88 total
+  - items
+    - 0x19618 = dagger price
+    - 0x19650 = short sword price
+    - 6 items in between -- 8 bytes apiece?
+    - start = 195D8? (jp 1926e)
+    - 8b?
+      - 2b price
+      - 1b? ?
+      - 1b? ?
+      - 1b? ?
+      - 1b? ?
+      - 1b? ?
+      - 1b? attack?
+  - ?
+    - 0x192fc us (2dd bytes?), 0x18f8d jp (2e2 bytes?)
+    - change at 195CE us: 10 00 04 02 A0 -> 00 08 00 00 00
+    
+stat changes:
+  C021: xenobia 
+    52ee 449a
+    Enemy 2
+    Initial HP: 3100 -> 4185
+    HP: 3100 -> 4185
+  C034: "inca god"
+    1a18 188c
+    Enemy 0
+    Initial HP: 1800 -> 2340
+    HP: 1800 -> 2340
+  C040: black dragon
+    21b8 1ed8
+    Enemy 0
+    Initial HP: 3500 -> 5880
+    HP: 3500 -> 5880
+    Attack: 180 -> 240
+  C041: piper
+    2934 2128
+    Enemy 0
+    Initial HP: 250 -> 375
+    HP: 250 -> 375
+    Attack: 46 -> 69
+  C044: the magic emperor
+    30cc 27ec
+    Enemy 0
+    Initial HP: 3500 -> 4375
+    HP: 3500 -> 4375
+  C044: ghaleon
+    12470 10198
+    Enemy 1
+    Initial HP: 4000 -> 5000
+    HP: 4000 -> 5000
+
+todo:
+  - script
+    - cutscene subtitles (probably won't do these)
+  - graphics
+  - misc
+    - in japanese version, characters only level up once regardless of amount
+      of exp gained -- probably won't revert
+    
+done:
+  - script
+    - substitution file
+    - manual fixes
+    - other strings (menus, etc.)
+    - primary dialogue strings -- check/improve heuristics
+    - battle strings
+      - can easily find ATTACK/NALL/RUN strings, figure out rest from there?
+      - enemy names?
+    - other strings (menus, etc.)
+  - graphics
+    - light barrier
+    - teleporter fountain hexagram (all?)
+      - vane
+      - dark cave
+      - final dungeon (2)
+    - final dungeon hexagram
+      - 0x2C
+      - 43c4 - 4334 = 90
+    - xenobia
+      - C0whatever: 0x38744-0x39C44 us, 0x3799C-0x38E9C jp
+      - the change we care about is somewhere further ahead -- just copy
+        rest of file
+    - ending luna
+      - 23853 / 21335
+      - 26432 / 22645
+      - 27678 / 23982 - lip sync?
+      - 29142 / 25545 - lip sync?
+      - 30632 / 27062
+      - ...
+      - 82712 / 78568
+        - this appears to be what we want
+        - skip some extra zeroes in JP to get alignment
+  - stats
+    - detection: see if we can reliably detect the double HP/MP sequence to
+      automate things
+  - shrine donations
+    - should be easy enough -- 0x0A to 0x64, can probably just do manually
+      - shrines: maps 2, 10, 11, 12?
+      - look for 0c 80 00 00 00 64
+    - red dragon shrine money bug fix
+      - receive 0x38 instead of losing 0x64 (0x0A)
+        - problem is at 0x7D1 in C011.MAP: they wanted you to lose 200 gold, so
+          they punched in C8, but it's treated as a signed 8-bit value and you
+          instead gain 56
+  - endgame damage increase
+    - C044.MAP: nop 1b10-1b41 to restore original behavior
+  - check stuff:
+    - item prices
+    - mp costs
+  
+  
+issues:
+  - subtitles
+  - balloon flight fonts
+  - level up
+  - nash ruid rejoin double-text
+  - SAVE/LOAD
+  - loading screen font
+  - "soooo hot"
+  
+for those weird temple messages:
+  - b1a us = a5c jp
+  - referencing script: b32 us, a74 jp
+  - a90 is branch after successful donation (no bonus song) -- use it
+    - orig: 0x6600 0x0084     BNE      *+0x86 [0xB16]
+    - new:  0x6600 0x00A0     BNE      *+0xA2 [0xB32]

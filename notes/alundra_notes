@@ -1,0 +1,124 @@
+us:
+  1AD684 - 09 - this is HP - 2 hp per hit
+  1AD786 - b4
+  1AD7B8 - c4
+  1AD80A - b4
+  1AD84A - aa
+  1AD86E - aa
+  
+  zazan hp: 1AC9A0
+    - init: C8 (200)
+    - earth book: 0x30 damage?
+    
+  title screen initial option: 42DE8, 1FFD40, 1FFEC0?
+    
+jp:
+  1ae548 - not hp?
+  1af3b4 - also hp?
+  
+  zazan hp: 1AE6D0
+
+DATAS.BIN
+  - sample map(?) file: 54 (wendell's dream)
+    - looks like these all have 7 subchunks each?
+      - chunk 0 = ?
+        - palettes
+        - warps
+        - can copy over from one map to another and break only those things?
+        - structure:
+          - first 4b? are map number?
+          - followed by palette (3b RGB??)
+          - other stuff starts at 0x42A?
+            - warp data?
+            - 0x24 bytes each?
+              - 1b? ?
+              - 1b? ?
+              - 1b? ?
+              - 1b? ?
+              - 1b? ?
+              - 1b? ?
+              - 2b mapnum
+              - 1b? ? spawn point?
+              - 1b? ? spawn y?
+      - chunk 6 = text
+        - series of 2b chunk-local pointers to string start
+        
+3 maps have non-text jp->us differences:
+alunex_jp/unnum/DATAS-450-3 alunex_us/unnum/DATAS-450-3 differ: byte 1, line 1
+alunex_jp/unnum/DATAS-487-3 alunex_us/unnum/DATAS-487-3 differ: byte 1154, line 1
+alunex_jp/unnum/DATAS-59-3 alunex_us/unnum/DATAS-59-3 differ: byte 2790, line 4
+    - DATAS-59-3
+      - 0xAE5 is B4 00 in JP, E1 00 in US -- no other differences
+      - medium switch timing adjustment, per manual?
+    - DATAS-450-3
+      - adjusts daruma-san game
+        - original string is 11? chars, new is 17 (0x0A vs 0x11)
+        - 0x890 is # of chars to print?
+        - equivalent of E31 JP affects intro text?
+      - medium's dream
+      - everything is different
+    - DATAS-487-3
+      - changes which buttons confirm selection on game over screen
+      - game over screen
+      - two changed bytes:
+        - 0x481 is A0 00 in JP, 40 00 in US
+        - 0x4A7 is A0 00 in JP, 40 00 in US
+        - 160 -> 64?
+!!0x27C144C us 1.1 = map to jump to when anzes' house is entered after targ
+
+5f7d640
+
+additionally, all the following DATAS subchunks differ:
+alunex_jp/unnum/DATAS-4 alunex_us/unnum/DATAS-4 differ: byte 3, line 1
+alunex_jp/unnum/DATAS-6 alunex_us/unnum/DATAS-6 differ: byte 2, line 1
+alunex_jp/unnum/DATAS-7 alunex_us/unnum/DATAS-7 differ: byte 2, line 1
+alunex_jp/unnum/DATAS-8 alunex_us/unnum/DATAS-8 differ: byte 2, line 1
+alunex_jp/unnum/DATAS-9 alunex_us/unnum/DATAS-9 differ: byte 2, line 1
+  - DATAS-4 - system/overworld strings?
+  - DATAS-6 - ?
+  - DATAS-7 - ?
+    - same as DATAS-6?
+  - DATAS-8 - ?
+    - same as DATAS-6?
+  - DATAS-9 - ?
+    - same as DATAS-6?
+  
+BALANCE.BIN enemy stat entries
+  - jp bin 9668047 = 1d8f BALANCE.BIN = mem 8012cceb? = slime start
+  - variable size, usually 0x11 or 0x0F?
+  - 1b hp
+  - 1b sword "vulnerabilty"
+    - bits 6-7: vulnerability settings?
+      - 00 = normal damage?
+      - 10 = invulnerable?
+      - 01 = instakill?
+      - 11 = every hit does 1hp?
+    
+    - bits 4-5: damage multiplier?
+      - 00 = every hit does 1hp?
+      - 01 = normal damage?
+      - 10 = hits do double damage?
+      - 11 = hits do triple damage?
+      
+    - bits 0-3: damage bonus per hit?
+      - add this after multiplying by bits 4-5 
+      
+    - 10 = normal, 40 = instakill? 01 = 1 hp per hit?
+    - bit 7 = no vulnerability if set (and bit 6 not set?)?
+    - bit 6 = attacks instakill?
+    - bit 5 = set to double damage?
+    - bit 4 = normal damage?
+  - 1b mace vulnerability
+  - 1b bow vulnerability
+  - 1b bomb vulnerability
+      - 40 for slime -- 40 = dies in one hit, 10 = dies in two hits
+  - 1b spirit rod vulnerability?
+  - 1b fire rod vulnerabilty
+  - 1b ice rod vulnerability
+  - 1b earth magic vulnerability
+  - 1b water magic vulnerability
+  - 1b fire magic vulnerability
+  - 1b wind magic vulnerability -- slime: 10 = 1-hit, 01 = 5?-hit
+  - 1b ? 01 for slime
+  - 1b ? 01 for slime
+  - 1b attack? 01 for slime

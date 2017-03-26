@@ -1,0 +1,812 @@
+***SAVE FIX***:
+  14DA2: check to determine whether to display "not enough exp" message
+    to suppress: NOP (4E 71) 14DAC-14DB7
+  150E2: check if current exp is greater than cost and fordbid save if so
+    to suppress: NOP 150E9-150EA
+  1512A: subtract exp cost when saving
+    to suppress: NOP 1512A-1512F
+  14D72 = display "COST" window (background only)
+    to suppress: NOP 14D72-14D77
+  14D96 = display computed cost (numbers only)
+    to suppress: NOP 14D96-14D9B
+    
+***Item stats***
+  - buy price of Leather Armor: IDATA (15E12 US, 1ECDA JP)
+    - Leather Armor is item 0x71
+  - stats appear to be in blocks of 0x10 bytes?
+    - so they start around 15702 US?
+    - item 11 -- White Dragon Crest at 15802?
+      - buy price: 0
+      - 0E 45
+      - 01
+      - 0F (+0x0F wisdom? probably not)
+      - 00 00 00 00 00 00 00 3F 00 00
+    - Red Dragon Crest at 15812?
+      - buy price: 0
+      - 0E 48
+      - 01
+      - 0A
+      - 00 00 00 00 00 00 00 3F 00 00
+    - Vitality Vial -- 15862
+      - buy price: 0x190
+  
+    
+'FIRE IN YOUR EYES'
+'WHAT POWER LURKS BENEATH'
+
+bios
+  5F3A = load file?
+    - system area, 8BE: load ASTART, then BSTART?
+    
+FF3A4E = cleared by vblank handler, used to wait for vblank
+FF3A4F = buttons pressed
+  - FFC04A = on title screen
+main 229F20 / sub A9F20 = ?
+  - bitfield; subcpu uses to flag main?
+    - routine to wait on this after main vblank?
+values related to buttons pressed?:
+  main FF3A4F
+  main FF3D51
+  sub? 29281
+    - not?
+  sub? 292C1
+    - not?
+  main 202AD5 / sub 82AD5
+  main 229FCB / sub A9FCB
+  
+around 2200C0 = x/y position
+  4e426
+actually 4e488 = gens notation for 2e488 subcpu prgram?
+  2e486 = 2b xpos?
+  2e49E = 2b ypos?
+
+ACTUALLY ACTUALLY
+  2E426 = x
+  2E428 = y
+  2E425 = facing?
+  2E61F = something to do with opening menu?
+  2E768 = 01 when menu open (characters can't move?)
+  2EAEA = ? menu?
+  2EAFA = array (16 entries?) tracking buttons pressed on each update?
+    - cycle through
+    - pos = 2E78E
+    - code: ASTART E2FA
+B364 = menu
+ASTART E3AC = routine to retrieve buttons pressed this frame?
+2EECC = array of settings?
+  - a/c button change, auto arrange, etc.
+2EB32 = ?
+  - accessed by routine similar to above
+  
+==DEBUG STUFF==
+byte 60D (24E of save file) of BRM to FF (orig 18)
+  - bit 2 = enemy stat adjuster menu before battle
+byte 612 (253 of save file) of BRM to FF (orig 00) = overworld debug
+  - bit 2 = hold B for walk through walls
+  - bit 3 = press A+B for hex entry box
+    - 0000 and anything past 0008 = flags
+    - 0001 = cutscene viewer
+    - 0002 = sound effects test
+    - 0003 = music test
+    - 0004 = start battle (requires 3 numbers)
+    - 0005 = warp to map
+    - 0006 = warp to map start point? (buggy)
+    - 0007 = character stats editor
+    - 0008 = set magic exp
+BSTART contains text for a "CONFIGURATION MODE"
+  - routine at BAA reads (prints?) strings from table for this mode,
+    but nothing calls it?
+DEBUG.BIN
+  - is this even in the right game?? seems to try to send data to main
+    CPU, but it sets D0 to D4 regs as if it expects them to be used
+    when they aren't
+
+FED4 = open main menu?
+jump table at 6A1E? for various functions
+  - probably used by the scripting system; these trigger palette effects,
+    open various types of windows and menus, etc.
+  19722 = open main menu
+  1C7F4 = combat/encounter menu
+  
+japanese text:
+  hiragana, etc.
+    0x8C = 0x6C (よ)
+    0x48 = 0x28 (い)
+    subtract 0x20 for hiragana, etc.
+  kanji: byte1 < 0x20?
+  (and not a command opcode, so >= 0x10?)
+    0x1083 = 出 = character 0x163
+    0x110E = ?? = character 0x1EE
+    take low 9 bits, add 0xE0
+  english/half-width??
+    
+    
+  
+  
+  
+black fiend encounter data (zophar's pinnacle):
+  700 / 560
+  m45: 4DE2
+  - M4E.GRP (maps 4C-4F are specially dedicated to the fiend encounters)
+    - hp = 4CE6 (us and jp)
+    - each subsequent stat is 2b, with 4b separating?
+    - curhp??
+    - maxhp??
+    - curmp??
+    - maxmp??
+    - attack
+    - defense
+    - wisdom
+    - magic endurance
+    - level
+    - agility
+    - luck
+    - ??
+    - ??
+    - run?
+    - 0x06 bytes, then range??
+    - 4b, then number of attacks?
+  
+5FF6
+
+2106a -> 4e 75 = crash handler "1"?
+  
+11700 = ?
+
+note: sub cpu(?) RAM 0004EFF4 = magic exp (probably longword)
+  - this seems to be US only
+  or: 0004ED16, 0004ED1A, 0004EFF4, 00202B1E, 00202B34
+code that loads for displaying on ruby at 1AF88 in IDATA.BIN (US)
+  and at 1AFA8? -- number of 3rd save file???
+no, stuff related to magic exp saving is in ASTART.BIN
+  14DA2: check to determine whether to display "not enough" message?
+    to suppress: NOP (4E 71) 14DAC-14DB8
+  15078: ?
+  150E2: actual amount checked to determine if save goes through?
+    to suppress: NOP 150E2-150E3
+  1512A: subtracts exp cost when saving
+    to suppress: NOP 1512A-1512F
+ok, now we need to get rid of the "COST" window...
+F2A0 = start of string table for misc menu stuff?
+  FD59 = "COST"
+4E990 = computed cost (lw)
+  14D72 = display "COST" window (background only)
+    to suppress: NOP 14D72-14D77
+  14D96 = display computed cost (numbers only)
+    to suppress: NOP 14D96-14D9B
+  
+values that could possibly be enemy max hp:
+  2A110
+  2A114
+  4E560
+  51D50
+  51D52
+  60CE0
+  60CE6
+
+ABK (ABLK in the chunk ID): scripted stuff?
+  - L2OPEN*.ABK = opening: replacing JP->US gives Japanese credits,
+    uncensored panning
+BIN: binary. yeah
+  ASTART: jp->us crashes at startup
+  C00A: jp->us crashes at startup
+    - bytes 12-15 = filesize
+    - appears to have code for title screen intro, including an embedded
+      ABLK file
+    - also contains references to files that don't actually exist on the disc?
+      - around 0x628: MANT00.BIN, MANT00A.BIN, MSTART2.BIN
+        - and also CUT_INFO.TXT
+      - these may be embedded in other files: grep finds matches for MANT00
+        in L2DEMO, M1A, M20
+  DEBUG: lol
+    - differs between JP and US
+  IDATA: interface? data, including item names, magic descriptions and interface
+    messages, etc
+    - starts with table of pointers
+      JP:
+      - 00000044: 256 uncompressed graphics patterns (8x8 english font, window
+        border and backgrounds, character names, status effects, misc)
+      - 00002044: JP only: Japanese font table
+        - 16-bit LUT up to 2C44
+        - after that, font graphics? (or mappings?)
+          (hiragana, katakana, and kanji?)
+      - 0000AF7A (00002044 in US): English font (+ half-width katakana)
+        - LUT to B07A (2144 US)?
+          - each of these is 2 letters apiece?
+          - 100
+          - 10B
+          - 11E
+          - 136
+          - 148
+          - 15A
+          - 220 (pos 16) = A?
+          - 236 (227A) = B and C?
+            - 23A = 'B' pixel data start?
+            - 2287 = 'C' pixel data start?
+          - 24A (228E)
+        - graphics
+          - format:
+          - 4b compression bitfield
+            - 2b row format, first letter
+            - 2b row format, second letter
+            - actually only one "letter", this system was originally
+              designed for a 2x2 tile Japanese font and later hacked up to
+              work with the 1x2 English font
+            - each set bit corresponds to one byte in the following data
+              section
+              - if bit is set, there exists a column-toggle byte in the data
+                section for the nth row of the character
+                from highest to lowest bit, marks rows from top to bottom
+          - data section
+            - for each bit: if set, invert all bits in the nth column,
+              starting from the row indicated in the compression bitfield;
+              otherwise, leave untouched
+              - special exception: the last row is never flipped except if
+                the compression settings bitfield has an entry for it (since
+                it's usually left empty to form a margin, except for certain
+                letters like J)
+              from highest to lowest bit, controls columns from left to right
+      - 0000B96E: character portraits
+        - 1st tile is filler? possibly some kanji?
+        - uncompressed graphics
+      - 0001364E: ? table of something??
+        - raw conversion looks very much like a block of compressed graphics
+        - 2b ????
+          - all 0 for first entry
+        - 16b? ????
+        - table of SOMETHING (around? 7C0 bytes)
+        - followed by SOMETHING ELSE
+      - 00013DF6: 
+        - the SOMETHING ELSE above?
+      - 000199FC: 
+        - size: 463E
+      - 0001E03A: monster name table?
+      - 0001E5CA: item stats table?
+      - 0001F1BA: magic stats table?
+      - 0001F796: 
+      - 0001FC3A: 
+      - 00020D8C: ?
+      - 00021BB6: 
+      - 000227C0: 
+      - 00022E2C: 
+      - 000264D4: EOF
+      US:
+      - 00000044: 256 uncompressed graphics patterns (8x8 english font, window
+        border and backgrounds, character names, status effects, misc)
+      - 00002044: English font + half-width katakana
+      - 0000288A: character portraits + palettes?
+        - palette for portrait, then uncompressed portrait data?
+      - 0000A56A: compressed graphics offset table?
+        - table of offsets into the following compressed graphics chunk?
+          16 bytes per entry??
+      - 0000AD12: compressed graphics data
+          - ad12
+          - ad24
+          - 
+          - ad83
+          - ade5
+          - ...
+          - b503?
+          - b5b8
+          - ...
+          - d68c?
+          - d6fd?
+        - compression format:
+          - 1b settings bitfield
+            - bit 7 = uncompressed if unset?
+            - bit 6 = ? also type? turning on messes with colors?
+              - without testing, I'm guessing this reverses semantics so that
+                the tile data starts with all bits sets, and the compression
+                strips turn bits off instead of on
+                 - this was exactly it
+                  - but i screwed up the implementation and spent over 4 hours
+                    trying to figure it out again
+              - example use: IDATA.BIN (us) 44764 / AEDC
+                (item 5, tournament invitation)
+                - tile 0: top half renders correctly, bottom is close but wrong
+                - tile 1: bottom half correct, top wrong
+                - etc.
+                - tile 0 at AEDE
+                  - top half FFFF, bottom half F8B3 1111 1000 1011 0011
+                    - bottom positions: 
+                      0 1 2 3
+                      0
+                      0   2 3
+                          2 3
+                    - bottom data:
+                      0: 00 0000 0000
+                      1: 5A 0101 1010
+                      2: 32 0011 0010
+                      3: 2E 0010 1110
+                      0: 0F 0000 1111
+                      0: 0F 0000 1111
+                      2: 02 0000 0010
+                      3: 2E 0010 1110
+                      2: 32 0011 0010
+                      3: 2E 0010 1110
+                      
+                    0:     0 6
+                           0 6
+                           0 6
+                           0 6
+                        should be:
+                           1 7
+                           1 7
+                           1 7
+                           1 7
+                      add 1
+                      
+                    1:     8 0
+                           0 8
+                           8 0
+                           0 8
+                        should be:
+                           F 7
+                           7 F
+                           F 7
+                           7 F
+                      add 7
+                      
+                    2:     9 0
+                           9 B
+                           0 0
+                           0 0
+                        should be:
+                           D 4
+                           D F
+                           4 4
+                           4 4
+                      add 4
+                      
+                    3:     0 0
+                           B B
+                           0 B
+                           0 B
+                        should be:
+                           4 4
+                           F F
+                           4 F
+                           4 F
+                      add 4
+                      
+               - if a strip data byte is 00, reinit decoding byte to 00
+               - any of the low 3 bits that aren't set by anything
+                 should be assumed 1?
+                      
+                 1 1 7 4
+                 1 1 7 4
+                 4 4 4 1
+                 4 4 4 1
+                      
+                - tile 1 at AEFC
+                  - top half F8B3, bottom half FFFF
+                - tile 2 at AF1A
+                  - top half FFFF, bottom half F1FE
+                - tile 3 at AF4A
+                  - top half F1FE, bottom half FFFF
+                
+            - FF = terminator?
+          - 1b number of tiles?
+          - followed by [numtiles] compressed chunks of the form:
+            - 4b bitfield indicating which positions within the tile (?)
+              receive additional data
+              - first 2b: cover top half of tile
+              - last 2b: bottom half
+              - position of strip:
+                - bit 7 = top left
+                - bit 6 = 2 right of 7
+                - bit 5 = 2 right of 6
+                - bit 4 = 2 right of 5
+                - bits 0-3: same positions as 4-7, but for an additional
+                  color bit(?)
+              - for bytes 2-3, move down 4
+            - for each bit that is set in the previous bitfield: 1 byte
+              determining compression of a 2x4 pixel strip in the tile
+              - bit 0 = top right of block
+              - bit 1 = pixel below 0
+              - bit 2 = pixel below 1
+              - bit 3 = pixel below 2
+              - bit 4 = pixel left of 0
+              - bit 5 = pixel left of 1?
+              - bit 6 = pixel left of 2?
+              - bit 7 = pixel left of 3?
+        - item graphics at the least
+          - overwrite ADAE-AEB1 with 10 13 repeating -- corrupt
+            right eye jewel graphic
+            - start: 0xAD83?
+              - byte 0: compression settings byte? orig 0x80
+                - bit 7 = ? type? turning off explodes graphic
+                - bit 6 = ? also type? turning on messes with colors?
+                - remaining bits do nothing?
+              - byte 1: number of tiles?
+                - lowering causes tiles from clothes graphic to be loaded
+              - 4b: compression bitfield???
+              - 21d bytes "block" data for tile 1?
+              - 4b ????
+              - more data?
+              - some sort of interleaving going on?
+                - swapping nybbles in AD89-AD8D usually changes 2 pixels,
+                  and every other byte affects same 2 pixels
+              - 0xAD9D
+                - bit 0 = top right of block
+                - bit 1 = pixel below 0
+                - bit 2 = pixel below 1
+                - bit 3 = pixel below 2
+                - bit 4 = pixel left of 0
+                - bit 5 = pixel left of 1?
+                - bit 6 = pixel left of 2?
+                - bit 7 = pixel left of 3?
+            - ADAE-ADB9
+            - overwrite ADAF-ADB3 with 44 -- corrupt bottom 3 lines
+      - 00010918: ?
+        - part 1: table of offsets into rest of chunk
+        - part 2: ?
+        - size: 45AE
+        - JP: 199FC-1E03A (463E)
+      - 00014F56: enemy name table
+      - 00015702: item stats table?
+      - 000162F2: magic stats table?
+        - 1F1BA-1F796 JP
+        - 10-byte structs? (150 total??)
+          - 1b icon ID?
+          - 1b MP cost?
+          - ???
+      - 000168CE: magic description table
+      - 00016ED0: item description? table
+      - 00018458: ??? identical JP->US
+        - JP: 20D8C-21BB6
+        - size: E2A
+      - 00019282: item name? table
+      - 0001A0B0: magic name? table
+      - 0001A8CA: 
+        - size: 4DC2
+      - 0001F68C: EOF
+  L2DEMO: dunno, but jp->us crashes on opening cutscene
+COM: M62C.COM -- stray executable from development?
+  - actually, this is referenced in ASTART.BIN, so maybe used?
+  - doesn't seem to actually contain valid x86 code
+  - us and jp differ -- us version has some ascii debug(?) output(?)
+CUT: cutscenes?
+  - most (all?) don't differ jp->us
+DAT: daaaaataaaaaa
+  CMB*.DAT
+    - replacing JP->US has no obvious effect, but all files differ
+    - CMB00.DAT
+      - begins with pointer table:
+        0 00000070: 16-bit LUT
+        1 000003DA: sprite mappings for characters?
+          - 
+        2 00001C20: 16-bit LUT
+        3 00001E0E: animation data for characters?
+        4 00002F82: 16-bit LUT
+        5 00002F9C: ?
+          - changing has no obvious effect
+        6 00003168: compressed graphics loading info for characters?
+          - 8b apiece?
+        7 00003398: compressed graphics data
+          - effects sprites?
+          - hiro sprites
+          - all sprites????
+        8 0000A240: palettes
+          - a26e = character sprites?
+        9 FFFFFFFF
+        A FFFFFFFF
+        B 0000A2E0: 16-bit LUT
+          - overwriting enough of these with 00 08 crashes the intro
+            cutscene when the opening credits should appear?
+        C 0000A766: animation data for effects/ruby?
+          - overwriting 7 bytes with 00 at 18A crashes on hiro attack
+            contained in: 184 (A8EA) and 18C (A8F2)
+          - specifically: 18C
+            - animation: hiro sword swing?
+            - 1b?: ? changing has no obvious effect
+            - 1b?: ? 02 makes hiro and enemy(ies??) disappear for frame
+              - if bit 1 set?
+            - 1b: x-pos
+            - 1b: y-pos
+            - 1b: number of tiles used for "swoosh" effect?
+              - 00 crashes
+            - 1b: ? hiro is invisible for frame if 0F
+            - 1b: ? incorrect graphic if nonzero
+            - 1b: ?
+          - next: 194 (A8FA)
+            - next frame of sword swing...
+        D 0000D064: 16-bit LUT for next chunk
+          - 0000
+          - 0024
+          - 0068
+          - 00AC
+          - 00B8
+        E 0000D244: something to do with graphics -- sprite maps?
+          - ruby and attack/spell effects
+          - D244
+          - D268
+          - D2AC
+          - D2F0
+          - D2FC
+        F 0000F0A0: 16-bit LUT?
+          - changing has no obvious effect
+          - 0
+          - 26
+          - 3A
+          - AC
+          - 11C
+          - 1B0
+        10 0000F0C8
+          - ??? changing has no obvious effect
+        11 0000F534: compressed graphics (ruby + effects) loading info?
+          - 8b apiece?
+        12 0000F644: compressed graphics data (ruby + effects)
+        13 0001AB4E: palette effects?
+          - overwriting enough stuff with FF turns
+            ruby's flame white
+        14 FFFFFFFF
+        15 FFFFFFFF
+        16 0001B0AE: 16-bit LUT
+          - 0E3C++ = 518 printed??
+          - battle scripts????
+        17 0001BBAE
+          - overwriting crashes on battle start
+        18 0002BB6A: 16-bit LUT
+          - ascending 16-bit numbers...
+          - 0, f0, 1e8, 256, 262, 26e, 27a
+          - offsets into following chunk? consistently point to bytes like
+            13, 11, and 10
+        19 0002C2AE
+        1A FFFFFFFF
+        1B FFFFFFFF
+  RES*.DAT
+    - replacing JP->US has no obvious effect, but all files differ substantially
+    - removing RES00.DAT crashes at first use of main game engine
+      (after opening "FMVs")
+      - begins with table of 4-byte pointers within file
+        - 0000006C: table of 16-bit values (big endian; seemingly all values are)
+        - 000000D0: table of 16-bit values? some FCFC
+        - 00000470: table of 16-bit values
+        - 0000048C: table of 16-bit values
+        - 0000048C: table of 16-bit values
+        - 000006C4:
+          - 4-byte value? = length of following data? (0x56)
+          - 16-bit negative values? (last negative value at 0x54)
+        - 000006C8: above
+        - 00000732: ?
+        - 00000752: ?
+        - 00000B16: ?
+        - FFFFFFFF
+        - FFFFFFFF
+        - 00000B56: 16-bit values, ascending
+        - 00000BD0: ??? patterns of 8 bytes
+        - 00000DB8: 4-byte num, 16-bit ascending?
+        - 00000E78: 16-bit
+        - FFFFFFFF
+        - FFFFFFFF
+        - 000012B0: patterns of 8 bytes?
+        - 0x13: 00001368: compressed sprites (overworld?)
+          - ruby
+          - hiro
+          - others?
+        - 00002FC4: 16-bit?
+        - FFFFFFFF
+        - FFFFFFFF
+        - 00002FE4: 16-bit?
+        - 000032E6: ? long!
+          - overwriting later parts (628E-78EF) crashes walking around
+            - but overwriting only part consisting of 10 00 repeated does nothing obvious
+        - 000065F2: 4-byte, 16-bit?
+        - 00006686: ?
+        - 000078E2: ? short
+          
+    - removing RES01.DAT crashes after first Leo cutscene
+    - removing RES02.DAT does nothing in the first few minutes of gameplay
+    - removing RES04.DAT does nothing in the first few minutes of gameplay
+GRP: map data
+  - layout
+  - scripts
+  - judging by raw graphics dump, also map graphics
+  M03.GRP -- gwyn's house
+    - bytes 0-3 = pointer to end of header?
+      - random encounter data?
+    - bytes 4-7 = pointer to map definition chunk??
+      - 0x54: offset table (within chunk)...
+        00000078 (CC): 
+          - increasing 16-bit, changing crashes
+        0000010C (160): 
+          - 8b structs?
+        000004EE (542): 
+          - 16-bit increasing
+        00000554 (5A8): 
+        00000840 (894): 
+          - 16-bit increasing
+        0000085E (8B2): 
+          - swapping first 2 bytes does nothing obvious
+        0000095E (9B2): 
+        000009B6 (A0A): compressed graphics
+          - npcs and stuff?
+        000037AE (3802): 
+        000037CE (3822): 
+        0000380E (3862): 
+        00003872 (38C6): 
+        00003AF8 (3B4C): 
+        0000628E (62E2): 
+        000064D4 (6528): 
+        0000889E (88F2): 
+        0000891E (8972): 
+    - bytes 8-11 = pointer to script definition chunk???
+      - 0x8E1E
+        - general structure:
+          - index????
+            - M03: 0x2D entries
+          - object layouts?
+            - script pointer chunk
+            - script data chunk
+            - ? chunk
+            - ? chunk
+            - ? chunk
+          - other stuff?
+          - M03: 6 layouts?
+          - M04: 15 layouts?
+            - chunk start: C13E
+              - 0x5D entries
+              - 0: ???? chunk: 174 C2B2
+                - 0x66 bytes
+              - 1 1DA C318
+              - 6 40B0 101ee
+              - 11 4d1e 10e5c
+              - 16 7e4e 13F8C
+              - 21 8D9A 14ed8
+              - 26 9762 158A0
+              - 31 A32A 16468
+              - 36 c5be 186fc
+              - 41 d3f6 19534
+              - 46 ec5c 1ad9a
+              - 51 10538 1c676
+              - 56 12210 1e34e
+              - 61 12BC6 1ed04
+              - 66 132AC 1f3ea
+              - 71 13a1c 1fb5a
+              - NOT 76 1463c 2077a: uncompressed graphics index??
+        000000B4 8ED2
+          - swapping values near end affects map animations???
+        000000E0 8EFE
+          - alternating:
+            - 2b something
+            - 2b script start offset in next chunk
+          - FFFFFFFF terminator?
+          - sample:
+            - 00
+            - D2
+            - E6
+            - 1BA
+            - 250
+        000000F8 8F16
+          - script data
+        0000035A 9178
+        000003DA 91F8
+        00000852 9670
+        00000F16 9D34
+          - script pointers
+        00000F2A 9D48
+          - script data
+        000011C2 9FE0
+        00001242 A060
+        000016B0 A4CE
+        00001D6A AB88
+          - script pointers
+        00001D92 ABB0
+          - script data
+        0000394C C76A
+        000039CC
+        00003D00
+        00004112
+        0000412A CF48
+          - script data
+        0000584A
+        000058CA
+        00005C16
+        0000601E
+        0000602E EE4C
+          - script data
+        00006CBC
+        00006D3C
+        00007052
+        000073C0
+        000073F4 10212
+          - script data
+        00007F3C 10D5A
+        00007FBC
+        00008246
+        FFFFFFFF
+        FFFFFFFF
+        00008538 11356
+        000085B8
+        0000884E
+        00008B4C
+        FFFFFFFF
+        00009250 1206E
+        FFFFFFFF
+        00009C74
+        FFFFFFFF
+        0000A0B0
+        FFFFFFFF
+        0000B0B4
+    - bytes 12-15 = total filesize
+    - 0x8E1E = chunk 2
+      - 8E1E: table of offsets (relative to chunk start)?
+      - 8ED2: uncompressed map graphics
+        - 15FFB-193D7 to 0 = blank spots on high layer outside,
+          low layer inside
+    - scripts: 30 = jump? if? 8-bit argument?
+PCM: pcm
+TXT: guess
+  - ABS, BIB, and CPY are the usual
+  - CUT_INFO is a SHIFT-JIS file listing the files used for each cutscene,
+    with Japanese comments
+    
+boss 1 -- 166 exp, 600s, 200m
+plantarium -- 2000 exp, 1740s, 1200m (3-person party)
+snow ape -- 4000 exp, 6656s, 5120m (4 people)
+
+not fixed:
+  - pentagrams:
+    - M29 serak palace
+      - 41, 43, 45, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 59, 61
+
+fixed:
+  - swapped heal magic icons
+  - magic shield icon
+  - pentagram pads:
+    - vane
+    - trial cave
+    - transmission spring
+    - M36 neo-trial cave
+      - 1c960 / 1d1e8
+      - 31, 33, 35, 36, 37, 38, 39, 40, 41, 42, 44
+    - M2B white dragon cave
+    - zophar's domain
+      - zophar's tower
+      - zophar's coliseum
+    - M2E neo-vane
+      - 21f5a / 25480
+      - chunks 56, 58, 60, 62, 64, 66, 67, 68, 69, 70, 72
+    - M09 zaback
+      - +0x20 bytes / 1 tile -- what changed here?
+      - 113b8
+      - 147ba
+      - 41, 43, 45, 47, 49
+      
+  - pentagram spells
+    - chunks 17 and 18 (index, not physical) of each CMB file contain
+      graphics for effects
+      - 17 = index of effects?
+      - 18 = compressed graphics
+    - chunks 22 and 23 = ? different in all?
+      - graphics or layout for POIS, etc.?
+    - chunks 24 and 25 = ? different in some? (e.g. CMB07)
+      - comet tail??
+      - something changed between JP REV00 and REV01 that carried over
+        to the US version
+  - plantarium
+  - 30s -> 500s guy
+  - statue donations:
+    - M01 larpa: both 100s
+    - M02 larpa (lucia plot event): 10s -> 100s
+    - M09 zaback: both 100s
+    - M0B dalton: both 100s
+    - M10 takkar: 100s -> 1000s
+    - M26 azado tower: 100s -> 1000s
+    - M29 serak palace: 100s -> 1500s
+    - M2E neo-vane: 100s -> 1500s
+    - M32 pentagulia shrine: 100s -> 500s?
+    - M37 pentagulia: 100s -> 500s
+  - luna nude
+  - star dragon tower music
+  
+b59c
+fb32
+f956
+
+19218
+1909e
+
+13992
+1399a

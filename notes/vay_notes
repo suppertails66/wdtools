@@ -1,0 +1,220 @@
+inn costs (4 -> 20)
+healing mp: 2 -> 10
+flame mp: 2 -> 5
+mandrakoa: 400 -> 1000
+mahoroba no kaze 300 -> 750
+
+KIWAN.SF
+  - DC 80 = 4D lookback, 3b
+    - byte 2 = distance?
+  - F6 80 = 17 lookback, 3b? or 2b space?
+  oh of course, it's that LZ bitpacking thing
+    - bits are read low->high
+    - set = literal, unset = lookback?
+    - lookbacks are 2b:
+      - 1b address low
+      - 1b
+        - upper nybble = high 4 bits of address
+        - lower nybble = length
+          - minimum = 3 bytes (length 0)
+      - the first byte and the upper nybble of the second byte
+        combine to form a 12-bit absolute offset into the current
+        decompression "block"
+        - each block consists of 0x1000 bytes, and each block starts
+          at 0x12? (e.g. 0x12, 0x1012, 0x2012)
+        - add 0x12 to get real offset from previous 0x1000 boundary
+  - 1E 00 = lookback 93F??
+  - 1E 80 = lookback 12? 1F?
+  - 1E 90 = lookback 3F
+  - 1E A0 = ?
+  - 1E B0 = ?
+  MERCENARY
+    - 91 00 = 43B
+    - 91 10 = 33B
+    - ? 91 20 = 23B?
+    - ? 91 30 = 13B?
+    - 91 40 = 3B
+    - 91 80 = C3B
+    - ? 91 90 = B3B
+    - ? 91 A0 = A3B
+    - 91 B0 = 93B lookback
+    - 91 C0 = 83B lookback
+    - 91 D0 = 73B lookback
+    - 91 E0 = 63B lookback?
+    - 91 F0 = 53B lookback?
+    
+    - 91 C0 = 83B
+    - 11 C0 = 8BB lookback
+    - 81 C0 = 84B lookback?
+    - F1 C0 = 7DB lookback?
+    
+    - 00 00 = 4CC?
+    - NEXT: 00 01 = 4D3
+    - NEXT NEXT: 00 00 = 4D3
+    - NEXT NEXT NEXT: 00 02 = 4D6
+    - NNNN = 4DB
+    
+- up to around 101A, 00 00 refers to 12
+- after that, it refers to 1012
+
+at 1349, 31B (as 309) = 131B
+at 1349, 35C (as 34A) = actual 35C
+at 1349, 51B (as 509) = actual 51B
+at 1349, 61B (as 609) = actual 61B
+presumably goes up to 71B
+at 1349, 81B (as 809) = actual 81B
+
+STARTUP.SF = items and stuff
+  - mercifully, this is uncompressed
+  - 4907 US: price of mahoroba no kaze / STRANGE BREW
+  - incidentally: "HO" "NOT IN USE"
+  
+in battle: party member 1(?) mp = FFF872?
+  - no fuck this, it's dynamically allocated
+    - FFF872, FFF76E, FFF9CA, FFF86C
+    
+us mp subtraction:
+FF:E2DC  30 38  MOVE.W  ($FA2A),D0               A0=FFFFEA1C A1=FFFFF64A A2=00238B4E A3=00238B56 A4=00FF97E0 A5=FFFFF64C A6=FFFFF9DE A7=FFFFFCAA D0=0000002C D1=00000002 D2=00000021 D3=00000006 D4=00000008 D5=00000537 D6=00000001 D7=00000000 xnzvc
+FF:E2E0  91 6D  SUB.W   D0,$0220(A5)             A0=FFFFEA1C A1=FFFFF64A A2=00238B4E A3=00238B56 A4=00FF97E0 A5=FFFFF64C A6=FFFFF9DE A7=FFFFFCAA D0=00000005 D1=00000002 D2=00000021 D3=00000006 D4=00000008 D5=00000537 D6=00000001 D7=00000000 xnzvc
+FF:E2E4  4E 75  RTS                              A0=FFFFEA1C A1=FFFFF64A A2=00238B4E A3=00238B56 A4=00FF97E0 A5=FFFFF64C A6=FFFFF9DE A7=FFFFFCAA D0=00000005 D1=00000002 D2=00000021 D3=00000006 D4=00000008 D5=00000537 D6=00000001 D7=00000000 xnzvc
+
+- when spell is chosen, selected spell's cost is written to FFFA2A
+- mp is subtracted after animation, once damage is displayed(?)
+- costs are hardcoded?? here's what happens when fire 2 is selected:
+FF:B34A  60 00  BRA     #$006C [FF:B3B8]         A0=00238B61 A1=FFFFF94E A2=00238B5A A3=00238B62 A4=00FF97E0 A5=FFFFF64E A6=FFFFF9DE A7=FFFFFCB6 D0=00000004 D1=00000002 D2=00000018 D3=00000006 D4=00000008 D5=00000537 D6=00000002 D7=00000006 xnzvc
+FF:B3B8  31 FC  MOVE.W  #$000A,($FA2A)           A0=00238B61 A1=FFFFF94E A2=00238B5A A3=00238B62 A4=00FF97E0 A5=FFFFF64E A6=FFFFF9DE A7=FFFFFCB6 D0=00000004 D1=00000002 D2=00000018 D3=00000006 D4=00000008 D5=00000537 D6=00000002 D7=00000006 xnzvc
+FF:B3BE  60 00  BRA     #$010C [FF:B4CC]         A0=00238B61 A1=FFFFF94E A2=00238B5A A3=00238B62 A4=00FF97E0 A5=FFFFF64E A6=FFFFF9DE A7=FFFFFCB6 D0=00000004 D1=00000002 D2=00000018 D3=00000006 D4=00000008 D5=00000537 D6=00000002 D7=00000006 xnzvc
+this is found in MAINPRG.TSK, FUCK GREP
+  - blaze is at B1B8
+  - "jump table" at B146 us, afd6 jp
+  
+making the overall block 0A bytes shorter
+this was accomplished by changing
+0x0000AFF6: 0x6000 0x0096                       BRA      *+0x98 [0xB08E]
+to
+0x0000B166: 0x6000 0x008C                       BRA      *+0x8E [0xB1F4]
+(changing l-bolt?'s init code to be the same as shock?'s)
+which combined with some removed code slightly optimizes space usage
+original code:
+0x0000B08E: 0x31FC 0x0005 0xFA2A                MOVE.W   #0x5,0xFA2A
+0x0000B094: 0x6000 0x00D0                       BRA      *+0xD2 [0xB166]
+new:
+0x0000B1F4: 0x31FC 0x000F 0xFA2A                MOVE.W   #0xF,0xFA2A
+0x0000B1FA: 0x6000 0x00D0                       BRA      *+0xD2 [0xB2CC]
+
+B166:
+  6000 32DA     BRA +0x32DC [E442]
+  
+E442:
+0x0000B08E: 0x31FC 0x0005 0xFA2A                MOVE.W   #0x5,0xFA2A
+0x0000B1FA: 0x6000 0xCE8C                       BRA      *-0xXXXX [0xB2CC]
+
+to get the original functionality back:
+  - copy over replaced spell costs with their JP equivalents
+  - for the 98->8E spell, add code at the end of the file and update
+    the branch addresses
+0x0000AFD6: 0x6000 0x0066                       BRA      *+0x68 [0xB03E] ;flame
+0x0000AFDA: 0x6000 0x006C                       BRA      *+0x6E [0xB048] ;blaze
+0x0000AFDE: 0x6000 0x0072                       BRA      *+0x74 [0xB052] ;malybu
+0x0000AFE2: 0x6000 0x0078                       BRA      *+0x7A [0xB05C] ;inferno
+0x0000AFE6: 0x6000 0x007E                       BRA      *+0x80 [0xB066] ;spellbane
+0x0000AFEA: 0x6000 0x0084                       BRA      *+0x86 [0xB070] ;thyxaal
+0x0000AFEE: 0x6000 0x008A                       BRA      *+0x8C [0xB07A] ;fate
+0x0000AFF2: 0x6000 0x0090                       BRA      *+0x92 [0xB084] ;shock
+0x0000AFF6: 0x6000 0x0096                       BRA      *+0x98 [0xB08E] ;l-bolt
+0x0000AFFA: 0x6000 0x009C                       BRA      *+0x9E [0xB098] ;blitz
+0x0000AFFE: 0x6000 0x00A2                       BRA      *+0xA4 [0xB0A2] ;megablast
+0x0000B002: 0x6000 0x00A8                       BRA      *+0xAA [0xB0AC] ;freezyr
+0x0000B006: 0x6000 0x00AE                       BRA      *+0xB0 [0xB0B6] ;narcosis
+0x0000B00A: 0x6000 0x00B4                       BRA      *+0xB6 [0xB0C0] ;befuddle
+0x0000B00E: 0x6000 0x00BA                       BRA      *+0xBC [0xB0CA] ;balm
+0x0000B012: 0x6000 0x00C0                       BRA      *+0xC2 [0xB0D4] ;neuman
+0x0000B016: 0x6000 0x00C6                       BRA      *+0xC8 [0xB0DE] ;restore
+0x0000B01A: 0x6000 0x00CC                       BRA      *+0xCE [0xB0E8] ;panacea
+0x0000B01E: 0x6000 0x00D2                       BRA      *+0xD4 [0xB0F2] ;vilkyss
+0x0000B022: 0x6000 0x00D8                       BRA      *+0xDA [0xB0FC] ;sapylls
+0x0000B026: 0x6000 0x00E4                       BRA      *+0xE6 [0xB10C] ;kolakeni
+0x0000B02A: 0x6000 0x00F0                       BRA      *+0xF2 [0xB11C] ;alakazam
+0x0000B02E: 0x6000 0x00FC                       BRA      *+0xFE [0xB12C]
+0x0000B032: 0x6000 0x0108                       BRA      *+0x10A [0xB13C]
+0x0000B036: 0x6000 0x0112                       BRA      *+0x114 [0xB14A]
+0x0000B03A: 0x6000 0x011C                       BRA      *+0x11E [0xB158]
+
+FF58A6 = selected character's mp on out-of-battle magic use window
+FFF02A = character 2 out-of-battle mp?
+out-of-battle mp cost table at 56AA in MAINPRG us, 54CE jp? 0x24 bytes?
+  - ah-ha, but brilliantly, this table is used _only_ to check for mp
+    overflow. the actual subtraction is done in code starting at 508A us,
+    4eb6 jp
+  - jump tables at 505e us, 4e86 jp
+  
+incidentally, the mp cost jack-ups are absolutely insane:
+  healing/balm: 2 -> 10
+  healingal/neumann: 9 -> 30
+  healkaboa/restore: 18 -> 80
+  escape: 10 -> 100
+  healall: 30 -> 140
+  
+us version adds soft reset code (abc start)
+
+and cheat code to save game when saving is disabled
+  - see mainprg 5902
+  
+something now checks for A and B specifically instead of any button
+  - mainprg 5C56
+  
+and now reads controller 2...hmmm
+  - mainprg 153C
+  - there appears to be a new script opcode(?) dedicated to retrieving
+    controller 2 buttons pressed -- see 94FA
+    - triggered by A0 in a script(?)
+    - example of script -- 80 00 02 10 00 1a 41 00 KIWAN
+    
+ffaa88
+
+eec2 determines whether save data exists (for allowing opening cutscenes
+to be skipped)
+  - fix by nopping mainprg 14ae-14b3?
+  
+party member 1 out-of-battle hp = ffefee
+
+level up: df62 jp, df68 us
+  - to suppress hp restoration, nop df70-dfa5
+  
+opcode 19 or something appears to be related to branching/conditionals
+  - 2b jump length, relative to position after initial opcode?
+  
+changes:
+  - monster stats
+  - spell mp costs
+  - item stats and prices
+  - inn costs
+  - no level up hp/mp restore
+  - vault chest gold
+  - sirufa
+  - gold vortex
+  - lance's bar tab
+  - opening cutscene skip on no files
+  
+issues:
+  party stoning death EXP?
+  
+enemy stats:
+  0: ? FF on digger ant causes instant death (and no exp)
+  1: hp
+  2: attack
+  3: defense
+  4: exp
+  5: gold
+  6: magic resistances?? bitfield?
+  7: crit rate?
+  8: speed
+  9: chance of using magic???
+  A: ? ff does nothing obvious
+  B: ? changing does nothing obvious
+  C: ? ff does nothing obvious (but changed)
+  D: ? ff does nothing obvious (but changed)
+  E: ? ff does nothing obvious (but changed)
+  F: ? ff does nothing obvious (but changed)
+  
+fff68c

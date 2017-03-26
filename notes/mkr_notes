@@ -1,0 +1,394 @@
+mkr_jpfiles/OBJECT/OBJ2744.BIN mkr_usfiles/OBJECT/OBJ2744.BIN differ: byte 137, line 1
+mkr_jpfiles/OBJECT/OBJ4925.BIN mkr_usfiles/OBJECT/OBJ4925.BIN differ: byte 23, line 1
+
+brekapoint: 0601d0dc
+
+hp (us):
+  601d18c
+  601d17c
+  
+  0601d17a
+
+  60A48CA (visible amount)
+  60A48D8 (also visible?)
+  60bfc4c YES
+  60f9865 NO
+  60FDBB8 (also visible??)
+  
+  60f90a6
+  60f920a
+  60f9696
+  
+  608f45e
+  60c44b1
+  
+  60bfc4a + 2
+  60fdb30
+  
+  60bfc4b -- hikaru max hp?
+  60bfc4c -- hikaru hp?
+  
+  60bfc5f -- fuu max hp?
+  60bfc60 -- fuu hp?
+  
+  6003f78 = pointer to hikaru hp?
+  
+  060f9778 = table of damage?
+    - 060f9802 = centipede damage?
+      - from 0606ca00 + 9
+        - code at 0600904c
+          - from routine 06008edc (called at 06008e04)
+      - 0600904e = centipede entry init code?
+    - code: ~0601B26C
+  0601b344
+  
+damage is encoded directly in 0 (main code loaded at startup)
+  - 0x67884 jp = 68a00 us = centipede stuff
+    - +9 = damage
+  - table starts at 0x689d4 us, 0x67858 jp?
+    - ends at 0x703b4 us, 0x6f238 jp?
+    - 0x18-byte entries?
+      - 4b address of update routine? (copying jp->us freezes enemies)
+      - 1b ?
+      - 1b attack?
+      - ???
+  - another table: 
+      
+60fdb58 = player x-velocity?
+      
+060d0104 = update routine for ice cave boss
+  - this code comes from OL05.BIN (starts at 0x104 in file)
+    - entry code: 2f e6 e5 01 90 6b e3 04 2f d6 6e 43
+    - changes:
+      - 0x450: mov.b -> mov.l
+      - 0x6f4: mov.b -> mov.l
+      - 0x726: mov.b -> mov.l
+      - 0x736: mov.b -> mov.l
+      - 0x8FA: mov.b -> mov.l
+      - ...
+      - 0x256A: ???
+      - 0x25AE: inserted "mov	r13,r6"
+      - 0x2A4D: ???
+        - order of pairs of instructions was swapped; extra FF of padding
+          added later?
+  - 60d0c30
+  - 60d0f94
+  - 060f8f50 = boss ??? x-velocity?
+    - overall struct is around 60f8f3c?
+      - +0x08 = ??? x-velocity is added to this??
+        - at 0600b40c
+      - +0x20 = 60f8f5c = x-acceleration?
+    - following 2 bytes are ??? written as long with previous
+      - 810C?
+  oh except the actual movement update code is in us 0600b3f6? (jp) 0: 0600a930?
+    - 0: 73f6 us, 6932 jp
+    
+  06056af0
+  0600c34e = movement update??
+  
+  4e75c jp = 52af0 us = 06056af0 = ?
+    - code at 0600c4a6 us
+    - multiplies??? 18000 involved?
+    - 60d0b82 us -- base speed?
+    - 0600c4aa = set x-vel????
+  constant changes:
+    b2c
+    c24 -- this one
+    c30 (x2)
+  - 10000 to 6003f6c + 0x04
+  60d0bc6
+  
+  0600c49c
+  060d0bcc
+  060d036a
+  060d0b6a
+  
+  060f8f50
+  060f8f52
+    060435f6
+  0600d002
+  0600d036
+    - 06003fa0 = velocity?
+    8d 10 61 a3 88 01 89 12 88 02
+    903a = 8576
+  0600d000
+  at 0600cfe4, r5 = target x-velocity. where the fuck does it come from?
+    - routine starts at 0600cfd4, called at 06043b94
+    - 06056af0 = table?
+      - access at 06019b48?
+    - at 0600548a, r1 is target x-velocity
+      - called at 06008200
+      060f8f28 + 10
+  
+  at 0600548a (update for all objects?):
+    060480e0
+    0604d3e0
+    060432b4 - 2f e6 2f d6 4f 22 d3 16 43 0b
+    0604c910
+    06015998
+    06018824
+    
+  06043b34
+    - from 06043306
+    
+  it happens at 06043b70
+    - x-vel? determined by call to 0600b006
+    
+  for future reference:
+    0600548a = called once per frame for each active object?
+      - 6004aae jp
+    06043b70 = ogre has decided to start moving?
+    
+caldina projectile damage
+  - code at 0601d0dc (r4 = damage (negative))
+  - damage lookup: 0601b26e?
+    - r0 (8a) + r4 (060f93e8) = 060f9472
+      - from 060f9802, during battle (code: 06055f90)
+    - 06 0d 29 fc (64f3c us, 60ba8 jp)
+    - read from 060f9932 on dungeon entrance
+      - ultimately from 0606ce08: 04 47 00 00 06 04 c9 10
+        - 0: 68e08 us, 67c8c jp
+  - read from 060f8fb1?
+  060f9188 + 8a = 60f9212
+    - from 060f8fb2
+      - from 0606e8a8 (code: 0600904e): 0b 02 00 00 06 0d
+        - which is at 0: 6a8a8 us
+  - THESE projectiles override the default settings with their own
+    - overwrite code: 060d257c (0e 24 e3 02 70 ff 0e c4)
+      - 90 35 e2 03 03 8c
+        - which is in OL05.BIN at 2572
+        - looks like this was specifically added in the us version to
+          make the projectiles deal more damage
+  
+  fireball
+  60f9e5a
+    code at 605388c us, 604f508 jp
+      - from 06053654?
+      - 0: 4f886
+    6056af0 = lookup table
+    60f9b08 + 0x20 = direction???
+    060538d6 = 04F8D6 = ?
+    
+  caldina 2
+  060f9080 -- x-vel?
+    - at 0600c4aa, from r0 - 28 02 53 f2 68 33
+        - in 0: 84aa us
+      - called from 060d1c44 - 43 0b 64 e3 d5 0e 64 e3
+        - in OL08.BIN: 1c44 us
+        
+  0601b2d6
+  
+  rafargar
+  - hikaru hp = 060bfc4c
+  - damage: 060f9058 + 8A = 60f90e2
+    - on hit: 0601b26e
+    - code: 060d0886 -- 0e 34 70 66 0e 25 4f 26
+      - in OL14.BIN at 886
+  - other stuff:
+    - 5de (nop)
+    - ? 5fe? (nop?)
+  - 060d05de = close slash?
+  - 060d05fe = most attacks?
+  - 060d1090 = projectiles
+  
+  ATTN: OL14 1d2c, 1e1a
+  
+  zagat: OL13
+    b4f6 = something?
+    BDDE = fireball
+    
+  giant robot: OL13
+    2c16 = main body? (2, should be 1)
+    003316 = sword? (8, should be 4)
+    004b1a = auxilary beam (4, should be 2)
+    
+      3332 = sword? (4 -- actually not changed?)
+    
+  final boss: OL13
+    - beam damage: 060fdc60 + fc = 60fdd5c
+      - from 060d8936
+      - at 060d8d88, beam damage set from r2
+      - from 060f9058 + 8a = 60f90e2, at 060d8d72
+        - this is set at 06055f90, to 1
+        - and then again at 060d727a, to 8
+      - from 060fdc60 + fc = 60fdd5c
+      - from 060f9778 + 8A = 60f9802
+      - 060fa0f8 + 8a = 60fa182
+      - at 7972, ID of small stars is being used as damage value!!
+        - jp sets at 776a
+        - this is going to take some work:
+          0079dc   mov.l @(0AC,PC), r4   ; 7a90 / $0600B07C?
+          0079de   jsr @r4               ; next instr makes r5 unusable!
+          
+          ...
+          ; target address
+          007a90   $newaddr
+          ...
+          
+          ; r0, r2, r3, r4, r7 available
+          newaddr  mov.w @(xxx,PC),r0    ; attack put index: $008A
+                   mov #01, r4           ; attack value
+                   mov.b r4,@(r0,r12)
+                   ; make up work
+                   mov.l @(xxx,PC),r7    ; 007A7C   .dl $06055FD4 ; !!!
+                   rts
+                   mov r12,r4
+        - ok that won't work
+        - try putting the jump address "inline" instead:
+          
+          0079F2      mov.l @(0x008,PC), r4
+          0079F4      jmp @r4
+          0079F6      nop
+          0079F8      .dl 060E2800         ; target address
+          0079FE      ; jump back to here
+          
+          ...
+          
+          012800      mov.w @(012,PC),r0    ; attack put index: $008A
+          012802      mov #01, r4           ; attack value
+          012804      mov.b r4,@(r0,r12)
+                      
+          ; make up work
+          012806      nop                   ; oops!
+          012808      mov.w @r15,r3
+          01280A      add #01,r3
+          01280C      mov.w r3,@r15
+                      
+          01280E      mov.l @(008,PC), r2   ; instruction after constant
+          012810      jmp @r2
+                      
+                      ; final instruction of make up work
+                      ; mov.w @(004,PC),r2
+          012812      extu.w r3,r3
+                      
+                      ; constants
+          012814      FFFF
+          012816      008A  ; 7a66
+          012818      060d79fe  ; "return" address
+                      
+                      
+  0079F2   mov.b r13,@(r0,r12) ; !!!
+  0079EC   mov.w @r15,r3                0079F4   mov.w @r15,r3
+  0079EE   add #01,r3                   0079F6   add #01,r3
+  0079F0   mov.w r3,@r15                0079F8   mov.w r3,@r15
+  0079F2   extu.w r3,r3                 0079FA   extu.w r3,r3
+  0079F4   mov.w @(068,PC),r2           0079FC   mov.w @(068,PC),r2
+          
+          
+    * 586E = left horn (c, should be 3)
+      - 586E: XX 0C -> XX 03
+      - 5876: XX 7E -> XX 87
+    * 5926 = right horn (c, should be 3)
+      - 5926: XX 0C -> XX 03
+      - 592E: XX 7E -> XX 87
+    * 5a06 = head (0c, should be 03?)
+      - 5A06: XX 0C -> XX 03
+      - 5A0A: XX 7E -> XX 87
+    005fa2 = eye lasers (0c, should be 03?)
+    00622E = big star 1 (8, should be 2)?
+    00629A = big star 2 (8, should be 2?)
+    007278 = electric beams (8, should be 2)
+    * bad | 007D00 = 3-proj spread (0C, should be 03)
+      - 7d00: XX 0C -> XX 03
+      - 7d04: XX 7E -> XX 87
+    * wrong | 0060e4 = orb 1 (0c, should be 03?)
+      - 60e4: XX 0C -> XX 03
+      - 60e8: XX 7E -> XX 87
+    * wrong | 006142 = orb 2 (0c, should be 03?)
+      - 6142: XX 0C -> XX 03
+      - 6146: XX 7E -> XX 87?
+    
+    looking for:
+      big stars (4, should be 1 / 8 and 2?)
+      small projs (2, should be 1 / 4 and 2?)
+    
+    586E = c, should be 3
+    
+    00B226 = something (4, should be 2?)
+    00B4F6? 6, should be 4?
+    
+    622e
+    3316
+    3332
+    586e
+    5926
+    5a06
+    5ac0
+    629a
+    
+  6422
+  
+  60f92b8 + 8a = 60f9342 = body damage
+    - from code at 060d0d3e
+    - 06070de0 + 9 (from 0600904c)
+      - then modified at 060d2c20
+      
+  060f93fc + 14 = 60f9410
+  - movement update code: 0600b3f6 us, 0600a932 jp
+  0: 45354
+    - from 0607ec1c + 0c = 607ec28 -- ff fb 80 00 ff fb 80 00 00 04 80 00 00 00 00 00 00 00 00 00 00 00 00 00
+    - first write at 060f9410
+      - at 7ac28 or 7db74
+        - part of an indexed(?) table: material starts at 7db50 us, 777a0 jp
+          - length: 0x60?
+        - other table: 7ac1c us, 7486c jp
+        
+  bubble
+  code: 605102a
+    92 0b 33 68 1e 38 1e 2a 1e 4b e0 03
+    - from a constant at 0605103e
+      - 0: 4d024 (us)
+    - xvel 60fa380
+    - acceleration? 60fa38c
+    - at 04D1D6
+    - 06051154 / 4d154: 4ccc -> 7333?
+      - yes
+      
+  fan - OL09
+    xvel: 60fae30
+    - 1dc6?
+    - 1E58 -> 00010000
+
+  bouncing thing
+  60fbb40
+  - velocity set at 0600c4aa -- 28 02 53 f2 68 33 55 f1
+    - 0: 84aa
+      - calls 060b1b94 -- 01 0a 02 1a 35 4d 03 0a
+        - 0: adb94
+        - obj update = 0600548A
+        - eventually comes from 0605271e and somewhere else
+          - 04E686 = source/problem
+  2aad8
+  88e4
+  - 0: further code at 0A598C us, a1bc4? jp
+  
+  OL11: 1422
+  
+  0600548A
+  
+  060d6940
+  57de
+  
+  060d548e
+  060d5a02
+  060d5c6e
+  060d6154
+  060d63cc
+  
+  0602da80
+  06015998
+  06018824
+  06051808
+  06045fa4 <---- this: 4f 22 b6 41 6e 43 40 15
+    - 0: 41fa4
+      - the change is at 04235C: 0400, should be 0200
+  06043256
+  060530e4
+  
+  caldina 3
+  060d6e28
+  060d6eb8
+  06015998
+  060d2ad0
+    - this one
+    

@@ -1,0 +1,15 @@
+7A = 0111 1010 = 3b lookback 0x6 bytes
+36 = 0011 0110 = 2b lookback 0xa bytes
+
+1 = literal
+01 = 1b lookback:
+  - high 2 bits are count (add 2)
+  - OR low 6 bits with FFC0 and treat as 16-bit signed offset from current pos
+001 = 2b lookback:
+  - high 4 bits are count?
+    - if zero, alt handling:
+      - read another byte
+      - if nonzero, add 2 to get real length
+      - otherwise, ???
+    - otherwise, add 2 to get real count
+  - low 12 bits are offset: OR with F000 and treat as signed

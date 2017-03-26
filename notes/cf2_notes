@@ -1,0 +1,184 @@
+2308 = ban level
+2309 = ban max hp
+230B = ban max mp?
+230D = ban attack
+230F = ban defense?
+2311 = ban ?
+2313 = ban ?
+2315 = ban ?
+
+231e = ban current hp
+2323 = party member 2 max hp?
+
+2470 = 1f0470 = 0 to disable random encounters
+  - us: 2469 = 1f0477
+
+e870
+
+stats added after equip around 2fc6 (defenese)
+  - from ($d2) = 97eb
+  - = afeb us
+
+final result of damage to player: C4EF logical (85)
+  - from c8dc
+    - set at c487
+      - actually c487 = "damage too low, pick random from 1-4 instead"
+      - c48f = apply normal damage?
+      - from routine at c3cd, called at 5fe9 (80)
+        - get monster index? monster position? (2b4b)
+        - look up address of monster stats (table at C717, max 4 entries)
+        - get ??? ($F8),y = 2b1c,2
+          - pointer to enemy stat info
+            - loaded to e.g. 2b0d? (2b66 jp)
+            - 2b max hp?
+            - 2b current hp?
+            - 2b attack
+        - 2b5d = party members' ???
+        - 25a9 = ?
+        - 20d0 = attack??
+        - 25c3 = player defense
+        - c016 = ? 2b ?? to $f8
+        - c60c (85) = load enemy stats to RAM?
+          - from c5ee <-- this
+          - routine start at c5c9? (from c0b0 -- ultimately to c703?)
+          - monster stats are at CBDB (85)? see C5CC
+            - rom 103db us, 10405 jp
+              - ... nothing changed
+            - bosses at RAM ca93 us, caab jp (85) (see c5a9)
+              - rom 10293 us, 102ab jp
+              - lots of changes
+              - 2b hp
+              - 2b attack
+              - 2b defense
+              - 2b ??
+              - 2b ??
+        - e0ba = e67e = rng?
+        - 25d5 = mp
+        - 2b57 = current user mp
+          - 2b52 = spell cost
+            - from a500
+      - 6652 = acquire more data?? to 25de??
+      - 6984
+      - 6981 (68ed jp):
+        - call 6652 (fetch byte from ($18), increment)
+          - fetch next script operation?
+            - main handler at 657F?
+              - 00 = yield?
+              - FF = ?
+              - 2D = ?
+              - anything else = use jump table at 65A8, handler at A066
+          - for village: A168 (86)
+            - this is at 0x57968 in ISO02
+              - this also exists identically at same location in JP
+              - jp loads from A177 = 57977 instead??
+        - copy 25de to 2463, call 416f (set encounters)
+        - in source data, FF = no monsters, FE = regular monsters, other = ???
+      - 657c = load something loop
+      - 50c5 -> 64d3
+        - source of map load: 6521 <-- runs continually after step taken on overworld
+          - based on value of 2AF2 (!= 03)
+        - 6546?
+          - based on 25e0 (!= 26ea)?
+          - 25de?
+        - 6552 = something
+        - 659e = jump to event (opcode) code?
+          - 6997 -> 4de3 -> E02D -> F379 -> map transition? (fadeout?)
+            - also 699a -> 6d08 -> stuff -> 657c
+            - write to 180f
+          - e07b = wait for frame
+          - call 6652 (fetch byte from ($18), increment)
+            - fetch next script operation?
+              - main handler at 657F?
+                - 00 = yield?
+                - FF = ?
+                - 2D = ?
+                - anything else = use jump table at 65A8, handler at A066
+      - 673e = map transition script handler routine
+        - write primary/sub? at 674d us, 66b9 jp
+        - next script byte ($18) = 25df us = 25e6 jp = submap? position?
+        - next script byte = 25e0 us = 25e7 jp = map?
+        - next script byte = ?
+        - 25DF, 25E0?
+        - ce00 = ?
+  - a10f = 
+  - 40bb = map init?
+    - 657c = 
+    - a144 = init script start in this case?
+      - 6981 (68ed jp): sets up encounters?
+    - scripts diverge after 2nd op (at A148)
+  - 40be
+  - after this ridiculous fucking effort, we can conclude that the encounters
+    are controlled by bit 7 of $3000. now what sets that?
+    - and the answer is: i forgot to trigger the next part of the plot in the
+      jp version
+
+scripting system:
+  - interpreter loop is at 657c us, 64e8 jp
+  - level init scripts run from 40b4 us/jp
+
+  - 1B = if
+    - 1b flag id
+      - high 5 bits = byte index into array at $3000?
+        - heh, they used self-modifying code for this -- see 68ab (81)
+      - low 3 bits = bit number
+    - 2b branch address
+    - handler: 689d
+
+track 98:
+ Start up and all Hu7CD-system maintenance by JUNPEH 　清水君、ビジュアル手伝ってくれて有難う。　
+ JUNPEH
+ Cosmic Fantasy visual program  ACTX by SHIMIZU 
+ Cosmic Fantasy visual program  ACTY by SHIMIZU 
+ Cosmic Fantasy visual program  ACTZ0 by SHIMIZU 
+ etc.
+ Cosmic Fantasy visual program by JUNPEH. 
+ VISUAL NULL PROGRAM LASER SOFT 
+
+gold: 241c (us)
+  - subtract item cost at a85a (84)
+    - from 2a68-2a6a
+    - 7e3d
+    - 7ecd
+      - from 2a6b
+      - 7ed7
+      - from 20c0
+        - = hex representation
+        - from ($D0) = 986a in this case
+          - ultimately from rom b06a?
+
+possible changes:
+  - bird flip in iso40
+  - monster stats are at CBDB (85)? see C5CC
+    - rom 103db us, 10405 jp
+      - ... nothing changed
+    - bosses at RAM ca93 us, caab jp (85) (see c5a9) -- rom 10293 us, 102ab jp
+      - lots of changes!
+        - 2b hp
+        - 2b attack
+        - 2b defense
+        - 2b ??
+        - 2b ??
+  - mp costs: table at be6f us, bd00 jp
+    - nothing changed
+  - treasure chests
+    - at least one change: empty -> berries (after viola)
+  - 20 exp for beating first boss
+    - see rom 57aea
+      
+fixed:
+  - bird flip in iso40
+  - bosses
+  - first boss exp
+  
+2581 = x-pos?
+  - 40c7 = 8787 = update camera?
+  - 22e0
+  - 2aec = camera scroll amount
+  - 8ac9 = walk right?
+    - from 8ab3
+      - 2ae6, 2ae9
+      - 26ba
+      - 8c34
+    - nop 8ab6-8ab7 / 104ab6? (no)
+    - walk through walls: always read 00 from 2ae9 us, 2b42 jp
+  - 87f5, etc.

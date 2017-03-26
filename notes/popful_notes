@@ -1,0 +1,128 @@
+all 0000.BIN, 0100.BIN, etc. files are pcm (all voices?)
+
+player hp:
+  FFA057 - active character?
+  FFEBC1 - mail?
+  2245FD - active character? (changes less?)
+player defense:
+  FFA05B - active character?
+damage to player:
+  FFA055 - nonzero = damage to be dealt to player?
+  FFA039 - post-damage invulnerability countdown timer
+    - jp: starts at 28
+  
+FFA857 - hp of first monster in elf forest (19)
+FFA858 - defense of first monster in elf forest (00)
+FFA859 - attack of first monster in elf forest (14)
+
+FFEC1C - intenal number of current level
+  - used to compute (among many other things, probably) spike damage
+
+06XX files are only in US (probably outtakes)
+TIME is only in US (probably new pause menu)
+
+DT00 - menus? main menu? graphics?
+  - FF enough freezes at main menu (with picture)
+DT01 - graphics? (main game?)
+GAME - main game code?? same jp/us
+GM$$ - code/data? for various parts of game?
+  - GM00 - FF crashes after title
+    - "Cannot find the action buffer"
+    - this contains the shop price changes and enemy damage changes
+      - shops:
+        - prices are BCD
+          - us: orange @ f2f4, cherry @ f2fc, apple @ f304, banana @ f30c
+          - jp: orange @ f69a, cherry @ f6a2, apple @ f6a8, banana @ f6b0
+          - us table @ f252-f539?
+          - jp table @ f5f8-f8df?
+      - enemies:
+        - stat table:
+          - jp: 1AD30-1E99D?, us: 1ACAE-1E91B?
+          - or maybe:
+          - jp: 1AD30-1BDC0?, us: 1ACAE-1BD3D? (1090)
+  - GM01 - "Not enough M-memory !", "FILENAME is not defined", "Illegal destination"
+    - align: jp 1b19e, us 1b11c
+  each GM file corresponds to a world(?), and has a separate stat table (same in all files):
+    GM00: jp: 1AD30-1BDC0?, us: 1ACAE-1BD3D? (1090)
+    GM01: jp: 1B19E-1C22D, us: 1B11C-1C1AB (1090)
+    
+K$$$ - ?
+  - K000 - FF has no immediate effect
+LEGD - title demo?
+  - FF to 88 FF 88 88 8A 8E EE EF 8A 8A D6 AA AF 00 30 AE 00 70 AA 8A 01 31 7F 03 F5 EE FE FE FF 8A 88 A8 BD 88 04 F1 18 8A 8A A1 05 71 8A CF 88 AA 00 F2 06 31 EF FE FF EE EF 88 88 A8 02 F2 A1 88 AA 81 5E 07 71 AA 05 30 13 8B B8 31 00 31 F0 18 BE EB 81 00 31 00 FD 96 1F
+    - ^- that crashes to main cpu error when opening should play
+  - 
+MSXX - ?
+OPEN - presumably opening scene
+  - "animation buffer is over", "compress buffer is over"
+PC01 - ?
+  - completely overwriting does nothing at start of game
+PIC0 - main menu image??
+  - 118 = ?
+  - 119 = ?
+SD01 - sound driver?
+  - " SFSD by AZM " -- Sega Falcom Sound Driver?
+SH$$ - shop stuff
+  - us->jp kills text, but everything works
+    - does not contain prices (jp kept)
+STX$ - overworld data(?)
+STXX - ?
+  - identical jp/us
+ST$$ - level data
+  - ST00 = world 1-1, ST01 = world 1-2, etc.
+  - copying us->jp actually works, complete with text (us has additional voice files that break cutscenes if voices are on, though)
+    - does not contain enemy stat data (jp stats are kept)
+    - does not affect stores (jp text and prices)
+TITL.BIN - presumably title screen
+TMP0 - ?
+  - identical jp/us
+Z$$$ - movie stuff? 44100 PCM?
+
+US: muteki = 1500 / 5DC, orange = 90 / 5a, cherry = 180 / b4
+JP: muteki =  100 /  64, orange = 60 / 3c, cherry = 120 / 78
+
+26619
+
+trace.log
+  21:5C40: checking enemy slots?
+  21:5C72: player stuff
+    - note to self: is FFA03C or FFA052 invincibility?
+  21:8286: check player hp
+  21:8362: prepare spike damage
+    - GM04 jp: 183FE
+    relevant routines:
+      - 183FE jp, 183D4 us
+        - jp:
+; get current level num
+0x000183F8: 0x3039 0xFFFF 0xEC1C                MOVE.W   0xFFFFFFFFFFFFEC1C,D0
+; shift right 3 bits
+0x000183FE: 0xE648                              LSR.W    #3,D0
+; add 3
+0x00018400: 0x5640                              ADDQ.W   #3,D0
+; mark as damage to player
+0x00018402: 0x3940 0x0054                       MOVE.W   D0,(0x54,A4)
+        - us:
+; get current level num
+0x000183CE: 0x3039 0xFFFF 0xEC1C                MOVE.W   0xFFFFFFFFFFFFEC1C,D0
+; shift right 1
+0x000183D4: 0xE248                              LSR.W    #1,D0
+; add 5
+0x000183D6: 0x5A40                              ADDQ.W   #5,D0
+; mark as damage to player
+0x000183D8: 0x3940 0x0054                       MOVE.W   D0,(0x54,A4)
+
+enemy stat table format:
+  16b per entry
+    1b? ? game doesn't like when this is changed (crash)
+    1b? ? game doesn't like when this is changed (crash)
+    2b hp
+    2b attack
+    2b defense
+    2b money dropped on kill
+    1b? ? something animation-related? always 0, 8 or 4
+    1b? ? always 0 -- 16-bit?
+      - changing seems to have no effect
+    2b? ??? changing causes wrong animation, tiles, palette??
+    1b? ? animation??
+    1b? ? animation??
+    

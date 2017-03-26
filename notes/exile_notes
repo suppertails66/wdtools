@@ -1,0 +1,171 @@
+IWRAM (US)
+00A5: ac?
+00C2: temp?
+  - written with enemy stat table pointer at us 8BFA
+    - (from A01C)
+  - read code at 8DB4
+  - value (jersualem): us AD66
+  - written with something else afterwards
+    - (from A022)
+0833: level
+0834: exp (2b)
+0836: exp to level up (2b)
+0838: hp (2b)
+083A: max hp (2b)
+083C: mp (2b)
+083E: max mp (2b)
+0842: gold
+
+IWRAM (JP)
+00A5: ac?
+0437: hp (2b)
+0439: max hp (2b)
+043B: mp (2b)
+043D: max mp (2b)
+
+during game, essential pointers are contained at start of data loaded to A000?
+  - this is at phys 106000
+  - A01C = enemy stat table pointer
+  - A022 = ???
+
+ENEMY STATS
+  - A01C = pointer to enemy stat table
+    - always 5 entries?
+    - examples: AB94 (antlion), AD66 (jerusalem)
+    - read code: us ~8DAC
+    - 8b entries:
+      - 1b hp: 2E38,X
+      - 1b attack: 3E3D,X
+      - 1b defense: 2E42,X
+      - 1b ? 2E47,X
+      - 1b ? 2E4C,X
+      - 1b ? 2E6F,X
+      - 1b ? 2E74,X
+      - 1b? ????
+  - us damage from enemy?: ~8F39
+    - 2E3D,X = enemy attack stat?
+      - array of enemy attack stats?
+      
+TO GET ENEMY STAT TABLES:
+  - read master load entries from table at us B1B21, jp B1826
+    - seems to have 0x25 entries (many blank)
+      - first 3 bytes form a LE block number
+        - add 0x40 for us version
+        - multiply by 0x800 for actual offset within iso
+      - 4th byte is high byte of load address (always 0xA0?)
+  - load however many blocks it takes to make sure we get the table
+  - get the stat table address at offset 0x1C of the loaded blocks
+    - this should point within the loaded block
+  - do whatever with the stat table
+      
+jerusalem disc read (us):
+  - full(?) load routine at 9509, called from 463F
+    - 2F00 = world??
+    - 2F01 = level??
+      - high nybble = main?
+      - low nybble = sub?
+    - code at 9548 derives pointer to load data by adding to 9321 (jp 9026)
+      - 9321 = level load pointer table addr?
+      - this table is found in iso at us B1B21, jp B1826
+    - A000 load code at 9680
+      - get address, etc. from ($20D8) = 9325
+        - b1 + $40 = FE
+        - b2 + carry from b1 = FD
+        - b3 + carry from b2 = FC (read location)
+        - b4 = FB (dst addr high)
+        - 01 = FF (local)
+        - 00 = FA (dst addr low)
+        - 20D0 = F8 (numblocks)
+      08 00 00 A0 00 03 05 01
+      - 01 = local
+      - 08 = 8 blocks
+      - 00 A0 = dst addr: A000
+      - 00 03 05 = src? resolves to 15E800
+        - ignore this, accidentally compared Jersusalem/antlion
+        - "base address" in table is 27D -- 0x40 added in code
+          - probably the table reflects the Japanese offsets, and the US
+            version relocates them to 0x40 blocks later
+
+level up code at log 897D us (page 4 / 0x82 -> phys 0x10497D (CD WRAM1))
+  - jp log 4DAE
+  - but us has orig jp code (w/ new constants) at 4FA6?
+    - might be new game init
+level up HP table: us log 49E0, jp 47e8 (0x28 bytes / 20 levels) (diff 1F8)
+level up MP table: us log 4A08, jp ?
+? 1b table: us log 4a30
+? 1b table: us log 4a44
+? 2b table?: us log 4a58 / jp 4860
+
+1f0f0f
+1fe0d6
+1f00d0 = amount of money to add from chest
+
+item changes
+  chest in jerusalem: 500g jp, 900g us
+    - amount: us log AC73 (rom 183473), jp ac95 (rom 183495)
+  30390B: 2500g -> 2000g
+  
+unrelated, but what happens at us 72AB / 6fef jp? different??
+  
+menus
+  a635e = menus overworld
+  afc4c = menus main?
+
+  764a = draw magic menu text? general menu text?
+  - from us 7298, jp 6fdc
+
+  us 7290 / jp 6fd4 = generic menu text drawing routine?
+    - no, magic selection menu open
+  us 72f7 = menu logic
+    6eff = when button pressed (2002), evaluates action to take?
+  3032 = take action on menu based on value of X?
+    - D = move?
+    - C = action?
+    - load section 84 into page 6
+  741a = menu confirmed
+  798f = "use magic" selected
+  75f2 = do window open animation
+  us 7290 / jp 6fd4  = open master magic selection menu (called at 7995)    - 
+  
+WARP
+  - AFC87 = number of options for magic menu (main levels)
+  - changing from 07 to 08 restores warp option, but text has been erased
+  
+7484 = magic use
+74E4 = status
+7538 = ?1
+753f = ?2
+7546 = backup
+7557 = "MAP WINDOW"
+7567 = equip/remove/drop
+7584 = use/stop
+75a6 = ?
+75ad = "PASSWORD"
+75c9 = ?
+75d0 = ?
+75d7 = ?
+75de = level up
+7595 = also use/drop?
+
+- move everything from status through "MAP WINDOW" up 6 bytes
+  - except truncate "MAP WINDOW" to "NDOW"
+- so:
+  74EA = status
+  753E = ?1
+  7545 = ?2
+  754C = backup
+  755D = "MAP WINDOW"
+  
+repeat for overworld:
+  8BF6 = status
+  8C4A = ?1
+  8C51 = ?2
+  8C58 = backup
+  8C69 = "MAP WINDOW"
+  
+- so:
+  8BFC = status
+  8C50 = ?1
+  8C57 = ?2
+  8C5E = backup
+  8C6F = "MAP WINDOW"
