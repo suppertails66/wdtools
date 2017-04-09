@@ -18,7 +18,7 @@ DEP := $(patsubst %.o,%.d,$(OBJ))
 #LIB := libblackt.a
 LIB := libcopycat.a
 
-all: blackt $(OBJ) copycat scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp
+all: blackt $(OBJ) copycat scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr tss_items_worked gearbolt_cmp lsss_stats lsss_money lsss_txt
 	
 copycat: blackt $(OBJ)
 	$(CXX) $(OBJ) src/main.cpp -o grp $(CXXFLAGS)
@@ -112,6 +112,24 @@ mkr_enemies: blackt $(OBJ)
 	
 gearbolt_decmp: blackt $(OBJ)
 	$(CXX) $(OBJ) src/gearbolt_decmp.cpp -o gearbolt_decmp $(CXXFLAGS)
+	
+lsss_extr: blackt $(OBJ)
+	$(CXX) $(OBJ) src/lsss_extr.cpp -o lsss_extr $(CXXFLAGS)
+	
+tss_items_worked: blackt $(OBJ)
+	$(CXX) $(OBJ) src/tss_items_worked.cpp -o tss_items_worked $(CXXFLAGS)
+	
+gearbolt_cmp: blackt $(OBJ)
+	$(CXX) $(OBJ) src/gearbolt_cmp.cpp -o gearbolt_cmp $(CXXFLAGS)
+	
+lsss_stats: blackt $(OBJ)
+	$(CXX) $(OBJ) src/lsss_stats.cpp -o lsss_stats $(CXXFLAGS)
+	
+lsss_money: blackt $(OBJ)
+	$(CXX) $(OBJ) src/lsss_money.cpp -o lsss_money $(CXXFLAGS)
+	
+lsss_txt: blackt $(OBJ)
+	$(CXX) $(OBJ) src/lsss_txt.cpp -o lsss_txt $(CXXFLAGS)
 	
 #libcopycat: $(OBJ)
 #	$(AR) rcs $(LIB) $^

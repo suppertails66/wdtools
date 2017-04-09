@@ -1,0 +1,618 @@
+***CHANGES MADE***
+(unless otherwise specified, offsets refer to the decompressed
+  embedded game executable minus the 0x800b header)
+regular enemy stats
+  - stored in table: 961a8 jp, 97768 us
+  - 0x26b structs, 0x80 entries total (0x1300 bytes)
+boss stats
+  - hardcoded init functions for each boss: start at 01D698 jp, 019DF0 us
+    - these use a stat scaling function to scale stats to player level
+money in chests
+  - most chests use common values from table at a15cc jp, a3f60 us
+"hardcoded" money chests
+  - some chests/events are hardcoded in the TEXT###.DAT files of LUNADATA.FIL:
+    - ???
+    - opcode is 1c 00? plus a second argument? plus padding, plus 4b amount
+escape litany cost
+  - 9825c jp, 9981c us
+removed tower puzzle solution
+misleading tower puzzle solution
+ocarina transfer shenanigans
+end sequence
+
+***CHANGES PENDING***
+- not doing the fucking bromides, or "rememberizer" shenanigans (for now)
+
+***NON-CHANGES***
+lunarnet claims these are changed, but it's wrong (actually platform differences?)
+- spring cutscenes
+- alex/luna mp in epilogue
+- order of color puzzle in tower (order of colors in dialogue was changed, but
+  puzzle is same)
+- white dragon wings in epilogue
+
+tower puzzle color order change
+  - tower interior:
+    - MAP112.SND
+    - BGM047.SND
+    - MAP_112.BIN
+      - to 80156000, length d800
+    - TEXT041.DAT
+      - to 80196000, length 3000
+    - PEO_112.DAT
+      - to 80156000, length 3000
+    - PEO_000.DAT
+      - to 80156000, length 27800
+  - 8005a170 = main script opcode jump, runs every time any opcode is processed
+  - not directly related, but first puzzle runs scripts such as 801dd3a0
+  - upon entering (ir)relevant area:
+    - 801dd624
+    - 801dd478?
+  - upon pressing final button in preceding area: 1dd4f0
+  - upon entering relevant area:
+    - 801dd464
+    - 801df4f0
+  - next:
+    - 801dd68a
+    - 801dd692
+      - message
+    - 801dd710
+    - 801dd68a
+    - 801df4f0
+  - 801dd514
+  - no wonder i couldn't find any changes -- there aren't any. whoever wrote
+    this up for lunarnet apparently noticed the changed color order in the
+    message, but didn't realize the puzzle itself was left untouched
+
+801415d8 -- common strings
+  - written at 80022960 during startup
+    - from 800e14a8 + 4
+      - written at 80022730, from 514(sp) = 1ff9cc
+        - from around 800af564?
+          - which comes from the exe: 9e560
+          
+ocarina
+  - id (or at least name id) = A8
+  - generic string table lookup: 8006c930
+    - start: 8006c8f0, a0 = string (item) id?
+      - called from 8006e428 on item give screen
+        - pointer to item/string id: 800e4fb2
+          - this appears to be the inventory (or a copy of it?)
+          - starts at 800e4fac
+          - read from 801dbfe8?
+  - 8001ac44 - special handling for dragon wings, dragon ring
+    - ~800e0620 + 4 seems to be a list of items for special handling?
+    - if the item is on this list, function returns position in list (8001ac5c); otherwise,
+      returns -1 (8001ac64)?
+    - return value then checked at 8001af7c
+    - if 0 or greater, branches to 8001afdc, which is probably what we're looking for
+      - checks something, then calls 80025864 w/ (index + 0x300) as parameter
+        - 80025864
+          - looks up something from 800e3d10 (800e4480)
+            - (index + 0x300) is stored here! (800e4480)
+              - check at ???
+              - call 80025c20
+                - >>= 8
+                - & 7
+                - & FF
+                - upper 3 bits are ??? index into jump table at 800118c8
+                  - changing affects "type" of thing displayed?
+                    - 0 = ?
+                    - 1 = ? blank
+                    - 2 = text
+                    - 3 = item icon
+                    - 4 = portrait
+                    - 5 = ?
+                    - 6 = ?
+                    - 7 = ?
+                  - 800118d4 = 80025cb4 = call 8001ad60, jump to 80025cdc
+                - lower 8 bits are ???
+                  - *8, add to 800e0608 = 800e0658
+                    - retrieves item index??
+          - something else from 800e45d0 (800e45e7)
+            - 01 is stored here
+              - checked at 80025d2c
+                - check 800e4440
+    - ok, that was something to do with drawing the item icons
+    - what else?
+    - ocarina id at 800e4fb3 (inventory copy)
+      - read at 8006c354
+        - call 8001af04
+        - 
+    - 0 = 801dbfe9
+    - 1 = 800e4fb3
+    - 80057c7c - 0
+    - 8002611c - 0 -> 1
+    - 8006ed54 - 1 (not if not selected!)
+    - 8006c354 - 1
+    - 8006e424 - 1 (not if not selected!)
+    - then loop:
+      - 8006e474 - 1 (not if not selected!)
+        - call 8006bfc0
+          - jump from table at 80012d68
+          - eventually, at 8006B518:
+            - draw all item icons?
+            - 80057c7c(!): read other items
+          - multiply ID by 0x12
+          - add to 800a9a68
+            - look backwards from this for info
+            - byte 4 (800aa62a) is checked here (< 5)
+            - 801caea8?
+            - 801dc368 + 2
+              - this is the index number of the character in that party slot?
+            - subtract 8, check if lt 3
+            - call 80057be8
+      - 80057c7c - 0
+  - attempting to give item to character: 8006cbb4
+    - this runs regardless of whether they can receive it
+    - if impossible, branch at 8006cbd8 is taken to reject
+    - check: (801cae90 + x) == 05
+      - x = (targetslot * 4)?
+      - targetslot is 9b0(gp), checkaddr is 9ec(gp)
+      - this is set at 8006b570
+      - 801cae98 = luna eligibility?
+      - 8006b548
+      - 8006b528 = critical check that fails for ocarina
+        - specific check for id a8, jump to failure condition if so
+05A524               addiu $v0, $zero, 00A8
+05A528               beq $s4, $v0, 000E
+  - 8006e344
+  - 8006cbb4 = item give
+  - to fix: nop 5a524-5a52b
+    
+
+end sequence
+  - messages:
+    - msg 1: "Remove yourself from my holy..." / わが
+    - msg 2: "How dare you ignore my words,..." / われに
+    - msg 3: "You ignore the will of your..." / くるなと
+    - msg 4: none, just lasers
+    - msg 5: "I shall not warn you again,..." / ただちに
+    - msg 6: "Your ignorance shall cost you..." AND YOU DIE
+             / none, just lasers
+    - msg 7: "What are you thinking?!..." / 
+  - msg 6 is around 8001def48 us
+    - this corresponds to TEXT042.DAT, 23c8
+  - 22ee us = 201a jp = blasts that are supposed to occur
+    - us has a relative branch at 226e by 7f
+      - so do an if or ifnot by 7d at 226f-2270?
+  - opcode jump lookup table at 800b333c -- multiply code by 4?
+    - 0b 00 = 8005c5dc
+      - advance pos by 2 (skip opcode itself)
+      - call 8005b5b8 (stream realign, 2, get 801dedee)
+      - then call 8005b5d8
+        - switch on a0 = 0, 1, 2 (hardcoded?)
+        - get 047f (would branch if zero)
+        - advance to 801dedf0 somehow
+        - read 0000
+          - would branch if nonzero
+  - call 80057778 -- look up bitflag (index = a0)?
+    - divide by 8, add to 0404(gp) = 801DC380
+    - result = v0 is 1 if set, 0 if unset
+  - at 8005c640, decide what condition we want?
+  - 8005c650: branch if flag not set?
+    - if set, store scriptpos (801dedea) and call 8005bf5c
+      - get 028a
+      - *= 2
+      - look up hw in 801dcb80
+      - get 1177
+      - *= 2 = 22ee
+  - opcode 0B -- branch if flag set
+    - 2b be   opcode (size may be whatever's necessary for 16-bit alignment)
+    - 2b le   jump const index -- multiply by 2 and add to start of file
+              to find a halfword constant indicating the absolute position within
+              the file of the jump target to go to if the condition is met
+              - the offset read from this position must also be multiplied by 2!
+    - 2b le   flag index
+    - 2b ??   ????? 0000 in the cases seen here -- different effects if nonzero
+  - opcode 0C -- branch if flag unset (congruent to above)
+  - to fix, insert a corresponding 8b bifns sequence at 1dedf2:
+      - 0c 00 8a 02 7f 04 00 00
+    and at 1deed0:
+      - 0c 00 e7 03 7f 04 00 00
+  - 801dedea
+  - there are actually two checks:
+    226a / 1dedea: if flag 47f is set, branch over extra dialogue at start
+    22ee / 1dee6e: do lasers
+    2348 / 1deec8: if flag 47f is set, branch over game over
+    
+    
+
+tower puzzle hint:
+  - 0660(gp) = script ptr = 800b8ba0
+  - first write to 0660(gp) script ptr at 8005a120 = 801ddf94
+  - 0640(gp) = 801dcb80
+  - call that actually displays message at 8005a170 (doesn't return until
+    all text in sequence displayed and box closed)
+    - to 8005ab1c
+    - at 8005ab4c, call to 8005a6d0 that opens dialogue window
+    - at 8005ab54, do opcode alignment (2-byte)
+    - at 8005ab6c, call to 8005a884 that displays message (doesn't return until done)
+      - hardcoded: a1 = 8005a834, a2 = 8005a864
+      - read byte 0 (1ddf96)
+        - if #ff, done? (branch to 8005aaf8)
+          - dunno what this is
+      - something from 80012994 (address table)
+      - AND byte 0 with #FFFF
+        - branch if not equal to #E (to 8005aa78)
+          - allows for formatting codes:
+            - FA = portrait left?
+            - FB = portrait right?
+              - for both of above, following byte = expression?
+            - 05 = end of dialogue? (probably not header)
+            - message starts at #0E
+      - do something if byte0 < #d6? not actually checked??
+      - read byte 1
+        - branch if zero (to 8005aae4)
+          - i.e. no more input, close box?
+        - AND with #FFFF
+        - 8005A8F4: branch if < #5c (character literal?)
+          - add #1f to get ASCII char!! range: 20-7A, inclusive
+          - 8005a9d8:
+            - subtract 0x24
+            - branch if >= 3b (i.e. lower case, can't be control code?)
+              - to 8005a68
+              - call s3 (8005a834)
+              - then jump to 8005a8d4 (do next char(s)?)
+            - multiply difference by 4
+            - jump to entry in table at 80012a84 (8005aa68)
+              - depending on character???
+              - call 8005a834 (display standard message?)
+                - note proximity to 8005a884 (display (gold?) get message)
+              - possible targets:
+                - 8005aa08 -- set a0 to ff00, call s2
+                - 8005aa18 -- set a0 to ff02, call s2
+                - 8005aa28 -- set a0 to ff03, call s2
+                - 8005aa38 -- set a0 to ff00, call s2
+                              set a0 to ff03, call s2
+                              jump to 8005aafc (end msg? returns)
+                - 8005aa50 -- set a0 to ff00, call s2, drop to below case
+                - 8005aa58 -- set a0 to ff01, call s2
+                - 8005aa68 -- "standard"? andi #ffff, s3
+              - all finish by jumping to 8005a8d4 unless otherwise noted
+        - not character literal?:
+          - if (char == #fd)
+            - 8005a908
+            - get next char
+            - add #00a1
+            - jump to 8005a934 (compression lookup)
+          - else if (char == #fe)
+            - 8005a920
+            - get next char
+            - add #019e
+            - jump to 8005a934 (compression lookup)
+          - else
+            - 8005a930
+            - char -= 5c
+            - 8005a934 (reentry point for extended compression lookups)
+            - call 80059f4c -- look up compression string from table at 800b386c
+              - if (char <= 0) return
+              - get the nth entry of the compressed string table
+                - at 800b386c
+              - return value in v0
+            - print each character of compression string?
+            - when null terminator reached, jump to doNext()
+            - cchar -= 0x24
+            - branch if >= 0x3b (lower case, not control char?)
+              - to 8005a9b8
+              - a0 &= FFFF
+              - call s3
+              - load next char
+              - if zero, branch to doNext()
+              - otherwise, jump to 8005a950 (compression string print loop)
+            - jump to handler from table at s4 (80012994)
+              - and terminate loop?
+  - ok, and the text we're looking for is in TEXT025.DAT
+    - in LUNADATA.FIL, starts from print opcode (02) at 7bc414
+    - within file, at 0x1414
+  - control codes:
+    - 05 = $ = end of message
+    - 06 = + = pause for confirmation, don't start new box afterwards
+    - 0B = * = pause for confirmation, start new box afterwards
+    - 21 = @ = line break
+    
+remember:
+  8005a170 = opcode jump
+  8005ab6c = call that prints message
+    - will read 0900(gp) before and write 0660(gp) after
+  8005ba70 = display money(?) get message
+
+1d2c68 = ghaleon hp
+
+- player level = 801d2b00 + 14 = 801d2b14?
+
+- money (us): 1a8214, 1d0214, 1dc37c?
+  - on buying, money subtracted from 1dc37c
+    - this is 06c8(gp)
+    - at 800534b8
+    - item price pointer at 088c(gp), gp = 800b8540, so 800b8dcc
+      - this is written at 80052cc0 / 80052ca8
+        - v0 = item index?
+        - add (item index * 2), subtract 0x12??
+        - e.g. longsword at 974cc jp, 98a8c us
+      - from table at 800a9a68?
+        - file: 964a8 jp, 98a68 us
+
+what is in the table starting at 98174 jp, 99734 us?
+  - mp costs
+  - change at 9825c jp, 9981c us (01 -> 14)
+    - jessica's "escape litany" went from 1 mp to 20
+
+chest in meribia sewers: 500g -> 250g
+  - write to money at 8005cfbc us
+  - NOT from 06c8(gp) = 800b8c08 -- this is pointer to money
+  - might be a generic "add amount" opcode?
+  - from v0 = 801de4e0
+  - pointer to amount(?) from 0660(gp) = 800b8ba0
+    - probably script pointer -- it's advanced by 2
+    - ex: 801de4dc
+    - calls 8005b5b8
+      - something with masking off low 2 bits of scriptptr
+      - might be a jump?
+        - initial pointer is to 1c
+        - make copy and save to global pointer at 0660(gp)
+        - read byte at (origscriptptr + 2)
+        - set a0 to 4
+        - call 8005b5b8
+        - in 8005b5b8, AND a0 with FF
+        - load updated scriptptr from 0660(gp)
+        - subtract a0 from 0 (should get -4)
+        - AND scriptptr with -a0 (mask low 2 bits?)
+        - add original a0
+        - store to 0660(gp) (example: 801dd770, which is bf0 in us TEXT051.DAT)
+  - 8005cfd4: call 8005ba70 (displays get message, doesn't return until closed)
+  - 8005a170 = call corresponding opcode handler?
+  - this particular data seems to originate from TEXT051.DAT in LUNADATA.FIL
+    - jp 1734, us 1960
+  - TEXT loaded at 801dcb80? in this case?
+  
+ok, how about chest in trial cave?
+  - command at 801fff18 us -- data not in LUNADATA.FIL
+  - ... on the fucking stack???
+  - 801d6b80 + DE0 = 1d7960
+  - 801dc380 + 5A9 = 1dc929
+  - 801dbb80
+  - 80012c2c
+    - jump to v0 = 800663b4
+  - 800efc88
+  - ok, maybe we're returning from this at 80068230?
+    - 0x28+ = old temps
+    - 0x40 total
+    - sp = 0x801fff00
+    - ret to 80067ef0
+      - call was at 80067ee8
+      - maybe from 80067d40???
+      - rets to 80056340
+  - 80067d2c = runs when confirm/inspect button pressed on field?
+  - 80067ee8 = before setting up money get code
+  - 800680f0 = setting up money get code
+  - 8005cf70 = after setting up money get code?
+  - 8006810c -- this is it
+    - table at 800b4f60
+      - this is in the EXE at a3f60 us, a15cc jp
+      - looks like amounts were halved?
+      - there's also another table directly after (a3fd2-a405f us) that's halved
+        - yet original still exists in RAM at 800de108??
+      - during startup, copied to ~800b4fee??
+      - later to ~800b53db??
+        - accessed from there when entering reza
+        - at 800687b8
+          - called at every map exit?
+          - byte gets written as hw to 0798(gp) = 800b8cd8
+            - read when opening savegame menu -- area name
+        - also 80068948
+        - affects graphics???
+        b53d8
+  
+
+enemy stats: loaded starting at 801d2c68
+  - struct is 0x3C bytes total?
+    - 1d2c68 2b hp
+    - 1d2c6a 2b max hp
+    - 1d2c6c 2b mp?
+    - 1d2c6e 2b max mp?
+    - 1d2c70 2b attack
+    - 1d2c72 2b defense
+    - 1d2c74 2b speed?
+    - 1d2c76 2b ?
+    - 1d2c78 2b ?
+    - 1d2c7a 1b # attacks
+    - 1d2c7b 1b range?
+    - 1d2c7c 1b level? increases attack?
+               - from b1
+    - 1d2c7d 1b? ?
+    - 1d2c7e 1b? level? increases attack?
+    - 1d2c7f 1b? 01 freezes?
+    - 1d2c80 1b? "literal" movement speed on battle field?
+    - 1d2c81 1b ?
+    - 1d2c82 1b ?
+    - 1d2c83 1b ?
+    - 1d2c84 2b ? ff freezes on fly attack(?)
+    - 1d2c86 1b ?
+    - 1d2c87 1b ?
+    - 1d2c88 1b ?
+    - 1d2c89 1b ?
+    - 1d2c8a 1b ?
+    - 1d2c8b 1b ?
+    - 1d2c8c 2b ?
+    - 1d2c8e 2b ?
+    - 1d2c90 2b ?
+    - 1d2c92 2b ?
+    - 1d2c94 2b ?
+    - 1d2c96 2b ?
+    - 1d2c98 2b ?
+    - 1d2ca0 2b ?
+    - 1d2ca2 2b ?
+    - 2b ?
+    - ...
+  - sample stats: fly, loaded from 800A71F4?
+    - table 80a71a8?
+    - at 8002df64
+      - routine 8002dedc, called from 8002d754
+        - look up from 800df1e0 + (6 & 0xFFFF), 801d2b00 + 0168, 0192
+          - get number, do something else if zero
+          - subtract 1
+          - multiply by 4, add original index?
+          - multiply by 4 again
+          - subtract original index
+          - multiply by 2
+          - e.g. 2 becomes 4c -- works out to multiplication by 0x26?
+          - add 800a71a8
+        - so:
+          - 800a71a8 = table of 0x26b stat structs
+            - us version: 800a8768 = 97768
+              - ship boss slime: 800A97BC us (end)
+                - hp set at 8002af00
+                  - by adding t6
+                  - called from 8002aee4
+                    - from 8002ae30
+                      - scaled to party level? 0x50 * 0x24
+                      - a0 = 0x50 = hp base?
+                      - from 8002a8e0
+                        - hardcoded constants at 8002a8bc
+                          - from 8002a8b8
+                            - jumped to at 8002a8b4 (v0, read from v1)
+                              - around 8002a890
+                                - branch to 8002addc if something nonzero
+                                - otherwise, get entry from pointer table at
+                                  80011a20? and jump to it
+                                - this is a20 real
+                                - there are 0x49 entries? possibly more
+                                - boss-stat-setting functions are at beginning? all??
+                                  - start: jp 1d160, us 198bc
+                                  - there's also something going on with 801d2b00
+                                    at 8002ae00 (ares level??)
+                                  - load 800e48e6[something] at 8002ae98
+            - table is 0x1300 bytes = 0x80 entries?
+            - format differs from enemy struct:
+              - 1b ?
+              - 1b ?
+              - 2b hp
+              - 2b attack
+              - 2b defense
+              - 2b speed?
+              - 2b ?
+              - 2b ?
+              - 2b? ?
+              - 2b? ?
+              - 2b? ?
+              - 2b? ?
+          - 800df1e0 (+ ?) = table of enemy indices?
+            - this isn't part of the exe
+    - this is found at 9620b
+    - table starts at 0x961aa?
+    - incidentally, boss scaling call at 80029efc us
+    
+; this function scales boss stats according to player level(?)
+; a0 = hp base value
+; a1 = attack base value
+; a2 = defense base value
+; a3 = agility base value
+; 0x10(sp) = wisdom base value
+; 0x14(sp) = magic defense base value
+; 0x18(sp) = minimum scale level? (even if player level is lower, enemy
+;   must be at least this strong)
+; player level = 801d2b00 + 14?
+  01D698               lui $v0, 800B              019DF0               lui $v0, 800C ; !!!
+
+LUNADATA.FIL
+  - 4b? ?
+  - 16b ? blank
+  - 4b numentries
+  - 4b filesize?
+  - 4b blank?
+  - entry struct: 0x20b each
+    - 0x14b? filename?
+    - 4b ? sector num?
+    - 4b offset? filesize?
+    - 4b ?
+  - there are 599 = 0x257 of these
+  
+main exe loaded to 80011000
+  - debug strings checked at 3890 (bootup)
+    - calls 7BB38 = a bunch of bios calls
+      - 39, 41, 44, 51, 71
+      - InitHeap, LoadExeHeader, FlushCache, LoadAndExecute, CdInit
+  - debug code stuff at 93D50 + 800 jp?
+    - load from a4960
+    - 123d0
+  - 7bbc8 = wrapper to BIOS ReadFile
+  - 127F8 = console write wrapper?
+    
+LUNADATA.FIL string: a0c
+  - referenced in code at 10A24
+  - b360?
+  
+STFIELD.DAT -- 0x16+ at 1d6982 in sss_mem2.bin
+
+8008d510 = search filesystem index for file (a0)?
+  - set v0 to 0 before returning if success
+  - called from 80022ec4
+    - s0 = index entry to check
+    - jump to 80022ef8 (return) on success
+      - called from 80022f3c
+        - 80022f8c = print debug info? "cd_load()"
+        - 80022f50 on success
+        - 0x14 + namestr = filesize (0x02327000 for LUNADATA.FIL)
+          - if ??, s0 = v1
+        - 0x10 + namestr = sector number??? 0x00000018 for LUNADATA.FIL
+          - add a0? = 0x30?
+          - jump to 80022b60
+            - eventually, call 80092df4
+              - ??? 1b4e81b5
+              - 0x48 += 0x96 (= DE)
+              - de * 1b4e81b5 = 17ae147af6
+                - take upper word only (0x17)
+              - 88888889 * 2?????
+              - do a bunch of other random shit
+              - eventually get 0x72, store to (801ffea0 + 2)
+                - store something else to (801ffea0 + 1)
+            - ? 0x80011aa4
+            - call 800236f4
+        - 0x2800
+        - by 80096bd0, we're reading i/o ports
+  - 0x12f4(gp) = buffer/global = number of files on disc
+  - 0x12f8(gp) = ? 80156000 for LUNADATA.FIL (initial)
+  - 80022dcc = call for file load?
+  - 80022f78 jp, 8002123c us = file is about to be loaded
+    - call 80022b60 to load
+    - v0 = ?? number of initial sectors to skip when computing offset?
+      (0x18 for SYSTEM.DAT)
+    - s1 = filesystem index entry pointer (80010118)
+    - a0 = sector num
+    - a1 = load address? 80156000, 801dcb80
+    - a2 = load length? 2800, 10000, b800
+    - a3 = a2?
+  
+- 80058af4
+
+BTL_001.DAT
+  - loaded to 80156000
+    - sector num: 3151
+    - length: 12000
+  - after that 80156000 read at 8002edf8
+    - 2b sz?
+      - multiply by 4
+        - add 3
+        - AND with FFFFFFFC
+      - do some stuff, add to 800E9A08
+    - 2b src?
+      - multiply by 4
+      - add base address
+      - call 80024fd4 (nothing important?)
+        - call 8008d098
+      - call 80023e18
+        - a0 = source?
+        - a1 = destination?
+          - call 80023e88
+            - load hword from src
+            - advance pos
+              - store at 0x1310(gp)
+            - examine bits low to high:
+              - 1 bit
+              - 2 bits
+              - 5 bits
+                - add 0x101?
+              - 5 bits
+              
+              - 5 bits again

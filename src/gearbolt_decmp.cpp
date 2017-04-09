@@ -6,7 +6,9 @@
 #include "util/ByteConversion.h"
 
 // maximum size of decompressed data
-const static int decompressionBufferSize = 0x40000;
+const static int decompressionBufferSize = 0x100000;
+
+const static int compressedExeOffset = 0x0000;
 
 using namespace std;
 
@@ -49,6 +51,7 @@ void exeDecompressNext(const char* src, char* dst, int sz,
                        int& getpos, int& cmdpos, int& dstpos, int& mask) {
   
   ExeDecompressionCommand cmd = exeGetCommand(src, getpos, cmdpos, mask);
+//  cout << cmd << " " << getpos << " " << dstpos << endl;
   
   switch (cmd) {
   case exeLiteral:
@@ -67,7 +70,7 @@ void exeDecompressNext(const char* src, char* dst, int sz,
       // allow for overlapping
       for (int i = 0; i < length; i++) {
         dst[dstpos++] = dst[lookbackPos++];
-        if (dstpos >= sz) break;
+//        if (dstpos >= sz) break;
       }
     }
     break;
@@ -102,7 +105,7 @@ void exeDecompressNext(const char* src, char* dst, int sz,
       if (lookbackPos < 0) { cerr << "2: " << getpos << " " << cmdpos << endl; getpos = sz; return; }
           for (int i = 0; i < length; i++) {
             dst[dstpos++] = dst[lookbackPos++];
-            if (dstpos >= sz) break;
+//            if (dstpos >= sz) break;
           }
         }
       }
@@ -112,7 +115,7 @@ void exeDecompressNext(const char* src, char* dst, int sz,
       if (lookbackPos < 0) { cerr << "3: " << getpos << " " << cmdpos << endl; getpos = sz; return; }
         for (int i = 0; i < length; i++) {
           dst[dstpos++] = dst[lookbackPos++];
-          if (dstpos >= sz) break;
+//          if (dstpos >= sz) break;
         }
       }
     }
@@ -142,7 +145,8 @@ int main(int argc, char* argv[]) {
   if (argc < 3) return 0;
   
   ifstream ifs(argv[1], ios_base::binary);
-  int sz = fsize(ifs);
+  int sz = fsize(ifs) - compressedExeOffset;
+  ifs.seekg(compressedExeOffset);
   char* buffer = new char[sz];
   
   ifs.read(buffer, sz);

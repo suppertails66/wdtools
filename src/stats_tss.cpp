@@ -6,6 +6,7 @@
 #include "util/ByteConversion.h"
 #include "util/TStringConversion.h"
 #include "util/TSerialize.h"
+#include "util/MiscMath.h"
 #include "scriptrip_tss_utils.h"
 
 using namespace std;
@@ -366,7 +367,7 @@ int main(int argc, char* argv[]) {
   }
   
 //  cout << "Enemy count: " << enemiesUS.size() << endl;
-  for (unsigned int i = 0; i < enemiesUS.size(); i++) {
+/*  for (unsigned int i = 0; i < enemiesUS.size(); i++) {
 //    cout << enemiesUS[i].address << " " << enemiesJP[i].address << endl;
 
 //    cout << "Enemy " << i << endl;
@@ -376,6 +377,46 @@ int main(int argc, char* argv[]) {
 //    enemiesUS[i] = enemiesJP[i];
     enemiesJP[i].save(fileUS, offset);
 //    cerr << enemiesUS[i].initialHP << " " << enemiesJP[i].initialHP << endl;
+  } */
+  
+//  cout << "Enemy count: " << enemiesUS.size() << endl;
+  for (unsigned int i = 0; i < enemiesUS.size(); i++) {
+
+    int offset = enemiesUS[i].address;
+    
+    int newHP = enemiesUS[i].initialHP * 1.55;
+    MiscMath::clamp(newHP, 0, 0xFFFE);
+    
+    int newMP = 0xFFFE;
+    MiscMath::clamp(newMP, 0, 0xFFFE);
+    
+    int newAttack = enemiesUS[i].attack * 1.55;
+    MiscMath::clamp(newAttack, 0, 0xFE);
+    
+    int newDefense = enemiesUS[i].defense * 1.55;
+    MiscMath::clamp(newDefense, 0, 0xFE);
+    
+    int newAgility = enemiesUS[i].agility * 2.00;
+    MiscMath::clamp(newAgility, 0, 0xFE);
+    
+    int newMagicDefense = enemiesUS[i].magicDefense * 1.55;
+    MiscMath::clamp(newMagicDefense, 0, 0xFE);
+    
+    int newNumberOfMoves = enemiesUS[i].numberOfMoves + 2;
+    MiscMath::clamp(newNumberOfMoves, 0, 0xFE);
+    
+    enemiesUS[i].initialHP = newHP;
+    enemiesUS[i].hp = newHP;
+    enemiesUS[i].initialMP = newMP;
+    enemiesUS[i].mp = newMP;
+    enemiesUS[i].attack = newAttack;
+    enemiesUS[i].defense = newDefense;
+    enemiesUS[i].agility = newAgility;
+    enemiesUS[i].magicDefense = newMagicDefense;
+    enemiesUS[i].numberOfMoves = newNumberOfMoves;
+    
+    enemiesUS[i].save(fileUS, offset);
+//    enemiesJP[i].save(fileUS, offset);
   }
   
 //  cout << endl;
