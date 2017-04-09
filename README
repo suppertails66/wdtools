@@ -12,6 +12,10 @@ Here's an overview of the tools:
 chngsrch: Searches two files for bytes which have increased by a specified
           amount. Intended as a poor-man's cheat search for Mednafen
           savestates, since its actual cheat search is broken.
+gearbolt_cmp: Compressor for compressed EXE in some PlayStation games.
+                This is used in Elemental Gearbolt, Lunar: Silver Star Story,
+                and presumably other games.
+gearbolt_decmp: Decompressor for compressed EXE in some PlayStation games.
 hucdism: Extremely basic disassembler for the HuC6280.
 pngcompare: Pixel-by-pixel PNG comparison utility.
 relsearch: Simple relative pattern searcher.
@@ -21,9 +25,6 @@ tablerip: Extracts tables of C-style strings.
 *** ALUNDRA ***
 aluncmp: Reads and compares enemy stats from BALANCE.BIN.
 alundat: Splits the main data file into its component subchunks.
-
-*** ELEMENTAL GEARBOLT ***
-gearbolt_decmp: Decompressor for Elemental Gearbolt's compressed EXE.
 
 *** EXILE ***
 exilestats: Enemy stat search/compare.
@@ -56,6 +57,13 @@ scriptrip_tss: Extracts English dialogue strings from scripts.
 scriptrip_tss_utils: Shared code for some TSS utilities.
 stats_tss: Enemy stat searcher and comparer.
 strinsert_tss: Inserts English dialogue strings produced by scriptrip_tss.
+
+*** LUNAR: SILVER STAR STORY COMPLETE ***
+lsss_extr: Extractor for LUNADATA.FIL archive.
+lsss_money: Searches for changed Silver payouts from chests.
+lsss_stats: Compares enemy stat tables.
+lsss_txt: Extracts text from US version of the game.
+          Note that this requires the compression string table from the EXE.
 
 *** MAGIC KNIGHT RAYEARTH ***
 mkr_enemies: Reads and compares enemy stat structs for relevant changes.
