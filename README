@@ -46,7 +46,7 @@ mapcp_eb: Inserts selected chunk from Japanese chunk file into US one.
           US release.
 scriptrip: Extracts English dialogue strings from scripts.
 scriptrip_jp: Extracts Japanese dialogue strings from scripts.
-              Requires scriptrip_jp_thingy.txt to convert to Unicode.
+              Requires src/scriptrip_jp_thingy.txt to convert to Unicode.
 strinsert: Inserts English dialogue strings produced by scriptrip.
            Does not work for Japanese version.
 
@@ -66,7 +66,8 @@ lsss_extr: Extractor for LUNADATA.FIL archive.
 lsss_money: Searches for changed Silver payouts from chests.
 lsss_stats: Compares enemy stat tables.
 lsss_txt: Extracts text from US version of the game.
-          Note that this requires the compression string table from the EXE.
+          Note that this requires the compression string table from the EXE,
+          found in src/lsss_txtcmpstr_us.bin.
 
 *** LUNAR 2: ETERNAL BLUE COMPLETE ***
 l2eb_data: Extractor for the DATA archive.
