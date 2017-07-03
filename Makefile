@@ -171,9 +171,10 @@ blackt/libblackt.a:
 
 clean:
 #	rm -f $(LIB)
+	cd ./blackt && $(MAKE) clean && cd $(CURDIR)
 	rm -rf $(ODIR)
-	rm $(tools)
-	rm grp
+	rm -f $(tools)
+	rm -f grp
 
 install: all
 	$(INSTALL) -d $(BINDIR)
