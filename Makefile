@@ -122,9 +122,6 @@ gearbolt_decmp: blackt $(OBJ)
 lsss_extr: blackt $(OBJ)
 	$(CXX) $(OBJ) src/lsss_extr.cpp -o lsss_extr $(CXXFLAGS)
 	
-tss_items_worked: blackt $(OBJ)
-	$(CXX) $(OBJ) src/tss_items_worked.cpp -o tss_items_worked $(CXXFLAGS)
-	
 gearbolt_cmp: blackt $(OBJ)
 	$(CXX) $(OBJ) src/gearbolt_cmp.cpp -o gearbolt_cmp $(CXXFLAGS)
 	
