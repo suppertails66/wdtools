@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include "util/ByteConversion.h"
@@ -6,6 +7,50 @@
 
 using namespace std;
 using namespace BlackT;
+
+void printCompared(double first, double second, bool invert = false) {
+  
+  int positive = (first >= 0);
+
+  cout << " | align=\"center\" | ";
+  if (first == second) {
+      cout.setf(ios::fixed, ios::floatfield);
+      cout << dec << setprecision(0);
+      cout << "<div style=\"color: gray;\">" << first << "</div>\n";
+  }
+  else {
+    cout << "<div style=\"font-weight: bold;\">";
+    cout.setf(ios::fixed, ios::floatfield);
+    cout << dec << setprecision(0);
+    cout << first << " -> " << second;
+  
+    if (positive) {
+      if (((second > first) && !invert) || ((second < first) && invert)) {
+        cout << "<div style=\"color: red;\">";
+      }
+      else {
+        cout << "<div style=\"color: green;\">";
+      }
+      cout << dec << ((second > first) ? "+" : "") << second - first << ", ";
+//      cout << ((second - first) / first) * 100 << "%\n";
+      cout << dec << setprecision(2);
+      cout << "×" << second / first << "\n";
+    }
+    else {
+      if (((second > first) && !invert) || ((second < first) && invert)) {
+        cout << "<div style=\"color: green;\">";
+      }
+      else {
+        cout << "<div style=\"color: red;\">";
+      }
+      cout << dec << ((second > first) ? "+" : "") << second - first << ", ";
+      cout << dec << setprecision(2);
+      cout << "×" << second / first << "\n";
+    }
+    
+    cout << "</div></div>\n";
+  }
+}
 
 struct LSSSEnemyStats {
   
@@ -167,7 +212,7 @@ struct LSSSEnemyStats {
 
 int main(int argc, char* argv[]) {
   
-  if (argc < 3) return 0;
+/*  if (argc < 3) return 0;
   
   ifstream ifsus(argv[1]);
   ifstream ifsjp(argv[2]);
@@ -190,6 +235,67 @@ int main(int argc, char* argv[]) {
     
     ++num;
   }
+  
+  return 0; */
+  
+  if (argc < 4) return 0;
+  
+  ifstream ifsus(argv[1]);
+  ifstream ifsjp(argv[2]);
+  ifstream ifsnames(argv[3]);
+  
+  cout << "{| class=\"wikitable\" style=\"margin: 1em auto 1em auto;\"\n"
+          " |+ \'\'Lunar: Silver Star Story\'\' Enemy Stat Changes\n"
+          " ! Name\n"
+          " ! HP\n"
+          " ! Attack\n"
+          " ! EXP\n"
+          " ! Silver\n";
+  
+  int num = 0;
+  while (ifsus.good()) {
+    ifsus.get();
+    if (!ifsus.good()) break;
+    ifsus.unget();
+    
+    LSSSEnemyStats jp;
+    LSSSEnemyStats us;
+    
+    jp.read(ifsjp);
+    us.read(ifsus);
+    
+    string name;
+    string x;
+    ifsnames >> x;
+    ifsnames.get();
+    while ((ifsnames.good()) && (ifsnames.peek() != '[')) name += ifsnames.get();
+    getline(ifsnames, x);
+    
+//    cout << name << endl;
+
+    // hp atk exp gold
+    
+    if ((jp.hp != us.hp)
+        || (jp.attack != us.attack)
+        || (jp.exp != us.exp)
+        || (jp.gold != us.gold)) {
+      cout << " |-\n";
+      cout << " | align=\"center\" style=\"font-weight: bold;\" | "
+        << name << "\n";
+      printCompared(jp.hp, us.hp);
+      printCompared(jp.attack, us.attack);
+      printCompared(jp.exp, us.exp, true);
+      printCompared(jp.gold, us.gold, true);
+    }
+    
+//    cout << "Enemy " << num << ":" << endl;
+//    jp.compare(us);
+//    cout << endl;
+    
+    ++num;
+  }
+    
+  cout << " |}\n";
   
   return 0;
 }

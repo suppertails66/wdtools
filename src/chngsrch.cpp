@@ -28,7 +28,7 @@ char* readFile(ifstream& ifs) {
 
 int main(int argc, char* argv[]) {
   
-  if (argc < 5) {
+  if (argc < 4) {
     
     return 0;
   }
@@ -40,20 +40,20 @@ int main(int argc, char* argv[]) {
   char* file1 = readFile(ifs1);
   char* file2 = readFile(ifs2);
   int orig = TStringConversion::stringToInt(string(argv[3]));
-  int chng = TStringConversion::stringToInt(string(argv[4]));
+//  int chng = TStringConversion::stringToInt(string(argv[4]));
   
   int sz = min(sz1, sz2);
   for (int i = 0; i < sz; i++) {
     int b1 = ((unsigned char*)file1)[i];
     int b2 = ((unsigned char*)file2)[i];
     
-    if ((b1 == orig) && (b2 == chng)) {
-      cout << hex << i << endl;
-    }
-
-//    if (b1 + orig == b2) {
+//    if ((b1 == orig) && (b2 == chng)) {
 //      cout << hex << i << endl;
 //    }
+
+    if (b1 + orig == b2) {
+      cout << hex << i << endl;
+    }
   }
   
   delete file1;

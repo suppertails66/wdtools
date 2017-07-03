@@ -13,10 +13,10 @@ using namespace BlackT;
   
 // If true, the program tries to heuristically guess proper case.
 // Otherwise, it outputs the raw text.
-const static bool changeCase = true;
+const static bool changeCase = false;
 
 // If changeCase is on, capitalize after punctuation marks.
-const static bool punctCaps = true;
+const static bool punctCaps = false;
 
 // If changeCase is on, capitalize after spaces.
 const static bool spaceCaps = false;

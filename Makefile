@@ -22,7 +22,7 @@ PREFIX := /usr/local
 BINDIR := $(PREFIX)/bin
 INSTALL := install
 
-tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt
+tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt l2eb_data l2eb_txt l2eb_grp l2eb_stats cf2_stats
 
 all: blackt copycat $(OBJ) $(tools)
 	
@@ -134,6 +134,21 @@ lsss_money: blackt $(OBJ)
 lsss_txt: blackt $(OBJ)
 	$(CXX) $(OBJ) src/lsss_txt.cpp -o lsss_txt $(CXXFLAGS)
 	
+l2eb_data: blackt $(OBJ)
+	$(CXX) $(OBJ) src/l2eb_data.cpp -o l2eb_data $(CXXFLAGS)
+	
+l2eb_txt: blackt $(OBJ)
+	$(CXX) $(OBJ) src/l2eb_txt.cpp -o l2eb_txt $(CXXFLAGS)
+	
+l2eb_grp: blackt $(OBJ)
+	$(CXX) $(OBJ) src/l2eb_grp.cpp -o l2eb_grp $(CXXFLAGS)
+	
+l2eb_stats: blackt $(OBJ)
+	$(CXX) $(OBJ) src/l2eb_stats.cpp -o l2eb_stats $(CXXFLAGS)
+	
+cf2_stats: blackt $(OBJ)
+	$(CXX) $(OBJ) src/cf2_stats.cpp -o cf2_stats $(CXXFLAGS)
+	
 #libcopycat: $(OBJ)
 #	$(AR) rcs $(LIB) $^
 
@@ -157,6 +172,7 @@ blackt/libblackt.a:
 clean:
 #	rm -f $(LIB)
 	rm -rf $(ODIR)
+	rm $(tools)
 
 install: all
 	$(INSTALL) -d $(BINDIR)
