@@ -173,6 +173,7 @@ clean:
 #	rm -f $(LIB)
 	rm -rf $(ODIR)
 	rm $(tools)
+	rm grp
 
 install: all
 	$(INSTALL) -d $(BINDIR)
