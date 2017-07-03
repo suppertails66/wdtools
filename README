@@ -26,6 +26,9 @@ tablerip: Extracts tables of C-style strings.
 aluncmp: Reads and compares enemy stats from BALANCE.BIN.
 alundat: Splits the main data file into its component subchunks.
 
+*** COSMIC FANTASY 2 ***
+cf2_stats: Compares enemy stat tables.
+
 *** EXILE ***
 exilestats: Enemy stat search/compare.
 
@@ -64,6 +67,12 @@ lsss_money: Searches for changed Silver payouts from chests.
 lsss_stats: Compares enemy stat tables.
 lsss_txt: Extracts text from US version of the game.
           Note that this requires the compression string table from the EXE.
+
+*** LUNAR 2: ETERNAL BLUE COMPLETE ***
+l2eb_data: Extractor for the DATA archive.
+l2eb_grp: Primitive and unfinished graphics extractor.
+l2eb_stats: Compares enemy stat tables.
+l2eb_txt: Extracts text from US version of the game.
 
 *** MAGIC KNIGHT RAYEARTH ***
 mkr_enemies: Reads and compares enemy stat structs for relevant changes.
