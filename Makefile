@@ -5,17 +5,15 @@ LDIR :=
 
 AR=ar
 CXX=g++
-CDEFINES = -DBLACKT_ENABLE_LIBPNG -DBLACKT_ENABLE_FREETYPE -DBLACKT_ENABLE_VORBISFILE -DBLACKT_ENABLE_SDL2
-CLIBS = -L./blackt -lblackt -lSDL2 -lvorbisfile -lpng
+CDEFINES = -DBLACKT_ENABLE_LIBPNG
+CLIBS = -L./blackt -lblackt -lpng
 CFLAGS = -std=gnu++11 -O2 -Wall
-CINCLUDES = -I/usr/include/SDL2 -I/usr/local/include/SDL2 -I/usr/include/freetype2 -I/usr/include/vorbis -I./blackt/src
+CINCLUDES = -I./blackt/src
 CXXFLAGS=$(CFLAGS) $(CDEFINES) $(CINCLUDES) -I$(IDIR) $(CLIBS)
-#CXXFLAGS=-std=gnu++11 -O2 -Wall -lSDL2 -lfreetype -lvorbisfile $(DEFINES) -I$(IDIR)
 
 SRC := $(wildcard $(SRCDIR)/*/*.cpp)
 OBJ := $(patsubst $(SRCDIR)/%,$(ODIR)/%,$(patsubst %.cpp,%.o,$(SRC)))
 DEP := $(patsubst %.o,%.d,$(OBJ))
-#LIB := libblackt.a
 LIB := libcopycat.a
 
 PREFIX := /usr/local
@@ -148,9 +146,6 @@ l2eb_stats: blackt $(OBJ)
 	
 cf2_stats: blackt $(OBJ)
 	$(CXX) $(OBJ) src/cf2_stats.cpp -o cf2_stats $(CXXFLAGS)
-	
-#libcopycat: $(OBJ)
-#	$(AR) rcs $(LIB) $^
 
 -include $(DEP)
 
@@ -163,14 +158,9 @@ blackt: blackt/libblackt.a
 blackt/libblackt.a:
 	cd ./blackt && $(MAKE) && cd $(CURDIR)
 
-#$(LIB): $(OBJ)
-#	$(AR) rcs $@ $^
-	#doxygen Doxyfile
-
 .PHONY: clean install
 
 clean:
-#	rm -f $(LIB)
 	cd ./blackt && $(MAKE) clean && cd $(CURDIR)
 	rm -rf $(ODIR)
 	rm -f $(tools)
