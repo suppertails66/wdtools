@@ -1,0 +1,6 @@
+*~
+*.[oa]
+*.obj
+*.lib
+
+blackt/obj/
