@@ -18,7 +18,13 @@ DEP := $(patsubst %.o,%.d,$(OBJ))
 #LIB := libblackt.a
 LIB := libcopycat.a
 
-all: blackt $(OBJ) copycat scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr tss_items_worked gearbolt_cmp lsss_stats lsss_money lsss_txt
+PREFIX := /usr/local
+BINDIR := $(PREFIX)/bin
+INSTALL := install
+
+tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt
+
+all: blackt copycat $(OBJ) $(tools)
 	
 copycat: blackt $(OBJ)
 	$(CXX) $(OBJ) src/main.cpp -o grp $(CXXFLAGS)
@@ -149,8 +155,12 @@ blackt/libblackt.a:
 #	$(AR) rcs $@ $^
 	#doxygen Doxyfile
 
-.PHONY: clean
+.PHONY: clean install
 
 clean:
 #	rm -f $(LIB)
 	rm -rf $(ODIR)
+
+install: all
+	$(INSTALL) -d $(BINDIR)
+	$(INSTALL) $(tools) $(BINDIR)
