@@ -1,0 +1,485 @@
+enemy 1 hp = 80154a08 jp, 80156a08 us
+  - written at 8004bdf4 jp
+    - from 58(v1) = 801ddb7c + 58 = 801ddbd4
+    - called at 8004c890
+      - 
+    - 801ddb08
+    - 1e 00 00 00 28 46 01 00 00 00 00
+    - this comes from MNSPR042.PCK (why the fuck won't breakpoints work)
+hiro hp? = 80081dfc
+
+changes:
+  - dialogue advance by holding button
+  - white tower music
+  - vulgan music (below decks, after pentagulia)
+  - serak palace statue fee
+MYSTERY:
+  - byte 0x8A0 of SND/MSE012.DAT was changed from 0x46 to 0x48 -- wth is it??
+    no other SND files were changed
+    - MSE = something sound effect?
+    - not white tower music
+  l2eb_jp_files/MAP/MP0408.DAT l2eb_us_files/MAP/MP0408.DAT differ: byte 18, line 1
+  l2eb_jp_files/MAP/MP040C.DAT l2eb_us_files/MAP/MP040C.DAT differ: byte 18, line 1
+  l2eb_jp_files/MAP/MP0410.DAT l2eb_us_files/MAP/MP0410.DAT differ: byte 18, line 1
+  l2eb_jp_files/MAP/MP0414.DAT l2eb_us_files/MAP/MP0414.DAT differ: byte 18, line 1
+  l2eb_jp_files/MAP/MP0418.DAT l2eb_us_files/MAP/MP0418.DAT differ: byte 18, line 1
+  l2eb_jp_files/MAP/MP2400.DAT l2eb_us_files/MAP/MP2400.DAT differ: byte 485, line 6
+  l2eb_jp_files/MAP/MP2401.DAT l2eb_us_files/MAP/MP2401.DAT differ: byte 485, line 6 
+  l2eb_jp_files/TBL/PP8004.DAT l2eb_us_files/TBL/PP8004.DAT differ: byte 267, line 2
+    - lots of changes
+  l2eb_jp_files/TBL/PPC800.DAT l2eb_us_files/TBL/PPC800.DAT differ: byte 2393, line 4
+    - 3 bytes of unknown significance changed
+
+stats, etc. are same between versions! wow!!
+
+8009fb8e = party y-position??
+17461b
+175240
+some sound register source = 80089d20
+1f801ca0
+
+ba000 looks like music data
+  - this may be a buffer for data read from cd
+as does 165b00
+  - written from routine at 80061684
+    - copies from 800ba000+
+    - called from 800179e0
+      - branched to at 80017928, in routine 80017918
+        - this is called twice per map load -- once to silence, once to
+          start new track?
+        - get 0002(s1) = 800aa620
+        - b2c(gp) = 8008b1fc = 6f14, 14360
+  - 80017854 = loading loop?
+  - 800aa690, 800aa620, etc. = script data??
+  - 80017840: runs when it's time to load map(?) data
+    - 28th execution of loop = load music data to ba000
+      - from v1 = (80010040) = 8001785c
+      - reads from 800aa638 + 2
+        - set at 80017628?
+          - from 80017600
+          - but cleared at 800616dc??????
+  - 80018820
+  - 800175dc
+  - load to ba000 (and all loading?) occurs by call to 80019494
+    - preceding: 800188a4
+  - 8002306c
+  - 800296ac
+    - 80019494
+      - sub: 80017950
+
+- functions below in routine at 80029670
+  - check top 12 bits of 8008b2e4
+    - this is c14(gp) -- set at 80023010
+      - okay, this is sort of what we want, but it seems to be the map
+        specifier or something -- modifying at this point puts us back
+        on the main map, but with new map's object layout
+      - 
+  - main music load: 80019494, called at 800296ac
+    - preceded at some distance or another by 800188a4
+    - the data read from the music file into the ba000 buffer is first accessed
+      at 80017d28
+    - and again at 80061694
+    - it's also copied to the buffer at 165b00 somewhere in there?
+    - by the time all this occurs, the game has already decided the music needs
+      to change, or is this simply a map/submap loading distinction?
+  ---------- at the time 80029670 is run, a1 = ???????? music???????
+           - changing here causes different music to play (14 = blue tower)
+           - but both main area and tower use 15!!!
+           - at 800296a4, a0 = music id???
+             - yes?
+             - from 8008b2f8
+               - set at 80029648
+                - from 800288c4
+                  - 800acb70 = music id
+                    - set at 800288b4
+                      - from a parameter to calling function 80028af0
+                        - NOT from 80122028 (not 80122020)
+                        - 80122050
+                          - at 80019f4c, from 800ba050?
+                            - 0b 00 00 08 00 00 00 00 08 10 00 02 1e 15 00 00 1e 00
+                            - this seems to be one of SMPG 4050, 9000, B400, or B800
+                            - byte 0x50
+                              - this is same in both files
+                              - 80029694: hardcoded hack in US?
+  018C18   lui $at, 8009                019644   lui $at, 8009
+  018C1C   sb $v0, 9040($at)            019648   sb $v0, B2F8($at)
+  018C20   andi $a0, $v0, 00FF          01964C   andi $v0, $v0, 00FF ; !!!
++                                       019650   addiu $a1, $zero, 0015
+                                        ; branch if target music is not 15
+                                        ; (white mask funk)
++                                       019654   bne $v0, $a1, 0006
++                                       019658   ori $v0, $zero, 9000
+                                        ; if 15, force music id to 08
+                                        ; (vulgan overworld)
++                                       01965C   addiu $v0, $zero, 0008
++                                       019660   lui $at, 8009
++                                       019664   sb $v0, B2F8($at)
+                                        ; resume normal flow
++                                       019668   j X0029698
++                                       01966C   sll $zero, $zero, 0
+                                        ; target music is not 15:
+                                        ; load value at 8008b2e4 (map number?)
++                                       019670   lui $a0, 8009
++                                       019674   lhu $a0, B2E4($a0)
++                                       019678   sll $zero, $zero, 0
+                                        ; take upper 12 bits only
++                                       01967C   andi $v1, $a0, FFF0
+                                        ; branch if 900X = white tower
++                                       019680   beq $v1, $v0, 0003
++                                       019684   ori $v0, $zero, 9014
+                                        ; check if map is 9014 (white tower 5f)
+                                        ; and play normal music if so
++                                       019688   bne $a0, $v0, 0003
++                                       01968C   sll $zero, $zero, 0
+                                        ; for all other white tower maps,
+                                        ; play music 15
++                                       019690   lui $at, 8009
++                                       019694   sb $a1, B2F8($at)
+                                        ; retrieve stored music ID for music
+                                        ; load
++                                       019698   lui $a0, 8009
++                                       01969C   lbu $a0, B2F8($a0)
+  018C24   jal X0018164                 0196A0   jal X001873C
+just nop everything from 19650-19697
+
+  - IMPORTANT TAKEAWAY: 8008b2f8 = music id
+  - and 8008b2e4 is probably map number
+
+  
+
+L2012.DAT
+
+harpy exp: 2526 dec (x3 = 842 dec?)
+harpy gold: 979 dec (x3, x2?)
+
+
+MNSPRXXX.PCK
+  - 4b ? varies -- # subchunks??
+  - stat(?) chunk:
+    - 4b chunksize
+    - series of 0x74-byte stat structs for each contained monster?
+      - 4b ?
+      - 18b? set of 16-bit stats, probably in "standard order":
+        - attack
+        - # attacks
+        - defense
+        - agility
+        - speed
+        - wisom
+        - magic endurance
+        - range
+        - luck 
+      - 10b blank?
+      - 42b ? weaknesses, resistances?
+      - 2b exp?
+      - 2b money?
+      - 2b item drop id?
+      - 2b item drop rate?
+  - monster name(s) chunk?
+    - 4b chunksize?
+  - ? chunk
+    - 4b chunksize?
+  - ? chunk
+    - 4b chunksize?
+  - ? chunk
+    - 4b chunksize?
+  - and on like this
+  
+controller input
+  - none of these:
+    - 8b34e?
+      - b6f2a?
+      - b6f94
+    - b7042?
+    - b7044?
+    - 1fff11?
+    - 88437
+      - 8b244
+      - 8b338
+      - 8b34c
+      - 8ba90
+        - apparently this is something to do with ruby's animations --
+          lock to 0 to play them in order and eventually freeze the game
+      - b6f8f
+      - b6fd2
+      - b6fd4
+      - b70bd
+      - b7154
+      - 10f010
+    - 10f810
+    - 10fc29
+    - 10fc39
+    - 10fc49
+    - 10fca9, etc.
+    - 11b010
+    - 11bc29, 39, etc.
+      - 1900e2
+    - 898d8
+  - 8b1b8
+    - looks like it
+  - 8b1c8
+  - b6f66
+  - b6f8d
+  - b6f9a
+  - b6f9c
+  - b6fa5
+  - 1fff1b
+  - 1fff47
+  - 1fff62
+  - 1fff63
+  
+- raw controller input: 8b1b8 (this frame?), 8b1c8 (prev frame?)
+  - gp is 8008a6d0
+  - xor, write to 8008b1d0, 8008b1d8 -- buttons triggered this frame?
+    - 1ac70, 1acf8, 17014
+    - dialogue: 2b8fc
+  - 800aa518?
+  - 80016b40 = run if particular button pressed
+    - 
+  - jp: 88f00, 88f10?
+    - latter seems to be used for reads
+    - the dialogue advance check is at 8002ad64 jp, 8002b8fc us?
+      - this is 1ad64 jp and 1b8fc us in exe
+      - examining more closely:
+        - jp checks 80088F20 and 80088F10
+        - us checks 8008B1D8 and 8008B1D0
+          - change to 8008b1c8 and 8008b1b8
+      - jp checks 80088f10 (buttons pressed), us checks 8008b1d0 (buttons triggered)
+        - buttons triggered previous frame for jp??
+        - 
+
+desert eye is doing twice as much damage with special attack in us
+  - wait what the fuck, no it isn't, wth is wrong with me
+  - and possibly using it more frequently?
+  - hiro hp (jp): 80081dfc (out of battle?), 8015401c (in battle?)
+    - in-battle struct base: 80154000?
+    - set from special attack at 80051744 jp
+
+
+
+800895f4 = exp awarded on battle victory (4b)
+  - 1168(gp) = 8008848c + 1168
+  - us: 8008b8dc?
+  - initialized to 0 at battle start; each enemy's exp added as it's defeated
+  - set at 800525b8 on enemy defeat
+    - increase amount from e.g. (2a + 80154de4) = 80154e0e
+
+DATA.UPD
+  - starts with chunk pointers?
+    - 18: ? (size: 0x9bc)
+    - 9d4: ? (size: bad4)
+    - c4a8: ? ff, next chunk is filenames at f186 (size: 2cde)
+    - 166e9: ? in the middle of filenames (not valid?) (size: a241)
+    - f168: filenames, from start?
+    - a369: ?
+  - not loaded to memory? (at least not permanently)
+  - there are 0x9d4 / 2516 filenames listed
+  
+DATA.IDX
+  - index of data in DATA.PAK
+  - format:
+    - 3b BIG ENDIAN sectornum
+    - 2b BIG ENDIAN sectorsize
+  - 0x9d4 entries total (same as filenames in DATA.UPD)
+    
+  107
+
+US adds SCN\CDE1510.DAT
+
+l2eb_jp_files/TBL/PP8004.DAT l2eb_us_files/TBL/PP8004.DAT differ: byte 267, line 2
+  - lots of changes, no idea
+  - this wasn't changed in the demo
+l2eb_jp_files/TBL/PPC800.DAT l2eb_us_files/TBL/PPC800.DAT differ: byte 2393, line 4
+  - at 0x958, 0x966, and 0x968, 0x87 was changed to 0x7B; no other changes
+
+/home/supper/prog/cdstuff/grp/l2eb_us_files/SCN/
+
+TITLE.PCK -- info is w/r/t us demo version
+  - title background begins at 3000e within file?
+  - 2b? encoding, something? changing causes freezing, etc.
+  - rest is 8bpp?
+  - there seem to be multiple images "interleaved" within 0x200b blocks: repeating
+    the first 0x200b block multiple times results in the background, title logo,
+    and copyright text all separately having their first line repeated
+    - within that 0x200b block, we have images with widths 320, 64, and 128 = 512 = 0x200
+    - so this is 8bpp, with each line of each subimage stored sequentially (interleaved)
+    - or they could just be one big texture that's sent to video memory and subdivided
+      in code, wth do i know about psx graphics
+    - all right, how do we know the number of subimages and their widths?
+  - header:
+    - 2b ? number of subimages?
+    - 2b? ?
+    - 4b? "width"
+      - take middle 2 bytes as width in some cases (TITLE.PCK)
+      - this also seems to be used to specify compression, possibly if third byte
+        is zero (EFSPR516.PCK)
+        - for these cases, low 2 bytes specify byte length of ??? compressed image data?
+          - ex: TITLE.PCK, such an image is loaded to 80108010
+          - read at 8002fc0c (skipped)
+        - okay, let's find something used
+          - ex: first subimage of _PC000.PCK, loaded to 801c4000, read when player moves?
+          - at 80014140
+            - first 0x10 bytes are a word each:
+              - 4b ? 00 00 00 10 added to base address (801c4000)
+                - 801c4010
+                - size of this "header", inclusive??
+                - 
+              - 4b ? 00 00 02 20 added to base address
+                - 801c4220
+                  - read hw
+                  - 
+              - 4b ? 00 00 2d 44 added to base address
+                - 801c6d44
+                - value returned from calling 800141e4 (0x14) is added to this
+                  - 801c6d58
+                - store stuff around 800896a8
+                - read (computedaddress + 2) as hw -- 801c6d5a = 0x0020
+                  - multiply by 4
+                  - add to (word4 + baseaddress) = 801c6e34
+                  - then read (word4computed + 2) as hw = 801c6e36 = 0006
+              - 4b ? 00 00 2d b4 added to base address
+                - 801c6db4
+
+some text (probably) at 801bba74 us
+  - this gets read at 80030c74 when the equipment menu is opened
+    - "Dagger" (edit: not)
+    - string starts(?) at 801bba74
+      - read at 80030c74
+        - routine begins at 80030c30
+      - possibly a skipString() function?
+      - get hw
+      - if ffff, do some additional step
+      - if not 0000, ignore and continue loop from top?
+      - this ends up runnning to 801bc36c
+      - loop that searches up to 0x80 hwords ahead for FFFF
+        - ends up at 801bc374
+      - returns 801bc36c
+    - returns to 80039698
+      - this routine begins at 80039654?
+      - calls 80030c30 twice
+      - does something if newpos != f84(gp), where gp is 8008a6d0 = 8008b654
+      - returns to 80037504
+        - start: 800374bc?
+        - check 80090000
+        - returns to 8003426c (from register call)
+        - 80034264 = menus
+    - calls 80030c30 with returned value, 0x34, 1, and 0 as parameters
+      - get the 0x625
+      - AND with 0xFF00
+        - branch if neq 0x600
+      - branch if parameter 2 was zero
+      - 
+    - something from 8019a2a0?
+    - 
+  
+at intro dungeon exterior, SCN\SMPG4800.DAT loaded at 80122000
+  - 80122866 is part of text for examining ball at entrance (maybe)
+  - 80122854
+    - read at 8002b9b0
+  - start: 80122826, read at 8002be24 and 8002b9b0
+    - earliest read: 80122822, at 8002b43c
+  - 8012282c? = "Uh."
+  - 8002be24 = start new box?
+  - 8002b9b0 = print next?
+    - read next hw
+    - store updated script pointer at d2c(gp)
+    - get (hw & 0xF000)
+    - call 8002b168
+      - stuff
+      - read d14(gp), get 80108b00
+      - read d58(gp), get 1b
+      - call 80012bb4
+        - 600 = ?
+        - take low byte
+          - branch if ff
+        - take low 7 bits of low byte
+        - add 1f (result here is 52)
+        - call 80012b3c
+          - branch if result is >= 0x81
+          - subtract 0x20 (result here is 0x32)
+          - shift result right by 1 (result here is 0x19)
+          - add to 801c38c8 (= 801c38e1)
+          - load byte from that address (here 0x98)
+          - divide by 4 (here 0x09)
+          - write to a1=801ffeb8
+        - stuff
+        - call 800131e4
+          - do something, get 80108b0c
+          - call 80013158
+            - return 801c337e
+          - at 8001323c, we possibly get the 'h'? (68)
+            - use this as index into 80108b14
+        - get 0x24
+        - add 0x1f to low byte of hw (here 0x75)
+        - call 80012b3c again
+        - branch if high bit of low byte of hw not set
+        - ...
+        - call 80012de4
+        - ...
+    - call 8002b40c
+      - call 8002b3a4
+        - call 8006413c
+          - 
+    - jump to 8002bdd0
+  - 8012282c = 'u' in "Ruby"
+  
+  - looks like all script codes must be 16-bit aligned
+  - BX XX = start of text box, XXX = portrait num?
+    - top nybble determines function?:
+      - A = item get??
+      - B = text box
+    - low nybble = ?? affects portrait for B
+  - aside from special formatting codes, text encoding is:
+    - read hw (little endian); upper byte is first character, lower is second
+    - take low 7 bits of each character
+    - add 1f to get ASCII value
+    - if high bit is set, break for control codes?
+    - FF is used as non-printing filler to maintain 16-bit alignment when
+      the number of characters is odd
+  - control codes used during control sections (triggered by setting high bit)
+    - 06: resume text printing, immediately: following byte is printed char
+    - 00 XX: end???
+    - 01 XX: choice???
+    - 10 00: line break?
+    - 20 XX: pause for input?
+    - 30 XX: ?
+  
+  // this is all wrong
+  function() {
+    counter;
+    pos;
+    while (true) {
+      u16 next = getHWord(pos);
+      
+      if (next == 0xFFFF) {
+        --counter;
+      }
+      
+      pos += 2;
+      
+      if (counter != 0) continue;
+    }
+    
+    int scanpos = pos;
+    u16 next = getHWord(scanpos);
+    int success = 0;
+    int i;
+    for (i = 0; i < 0x80; i++) {
+      if (next == 0xFFFF) {
+        success = 1;
+        break;
+      }
+      
+      u16 next = getHWord(scanpos);
+      scanpos += 2;
+    }
+    
+    if (!success) return;
+    
+    ++i;
+    call 80061684;
+  }
+  
+  
+  
+  
