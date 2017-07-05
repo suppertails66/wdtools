@@ -1,0 +1,556 @@
+***MENU HALFWIDTH HACKS***
+  file: 1
+  0601ff78 (7F78): 7C 08 -> 7C 04
+    - seems to take care of pretty much everything?
+    
+***DIALOGUE HALFWIDTH HACKS***
+  file: 1
+  06028f6c (10f6c): E5 11 -> E5 09
+    - change spacing between characters
+  06028f9e (10f9e): 00 09 -> E5 11
+    - fix interdependency between char spacing and height
+  06028f5c (10f5c): E1 0F -> E1 1E (probably)
+    - modify max characters per line
+
+***BATTLE HALFWIDTH HACKS***
+  file: 2
+  0603DEB2 (25EB2): EB FF -> EB F7
+    - magic descriptions, battle messages?
+  0603e1d4 (261D4): EB FF -> EB F7
+    - enemy names
+  0603e322 (26322): ???
+    - prob a print struct init, but offset is 00 instead of -1,
+      and editing doesn't seem to have any effect
+  0603F3BE (273BE): EC FF -> EC F7
+    - halves width of many static labels ("attack", "defend", etc.)
+    - double "secondary spacing offset"?
+    - why doesn't game like changing other spacing value? recycled init
+      variables?
+  0603f560 (27560): E1 FF -> E1 F7
+    - character names on menu
+    
+    
+    
+***GENERAL***
+
+  - 0020f2000: KANJI.FNT
+  - 0 code file: ?
+  - 1: loaded to 06018000 on overworld?
+  - 2: ?
+  - 3: loaded to 002e0000 on overworld?
+  - 4: ?
+      - 
+    
+
+***OVERWORLD DIALOGUE***
+
+
+060a111c: text printing x-pos?
+  - a111b = y-pos?
+    - no?
+  - a1113 = y-pos?
+    - yes
+  - 06052567?
+  - initialized at 06028bb2
+    - updated at 0602900e
+    - read at 06028f5a, 06028f74, 06028fb6
+      - 06028f5a: check for x-overflow (15 chars?) and wrap if so?
+      - 06028f74: calculate position?
+        - 06028f6c: width of character?
+      - 06028f96: every 1st char?
+        - problem is that the 0x11 from r5 (at 06028f6c) is recycled as
+          height of the character (checked at 06028fae)
+          - solution: overwrite nop at 06028f9e w/ mov #17,r5 (e5 11)
+          - so:
+            06028f6d (10f6d): 11 -> 09
+            06028f9e (10f9e): 00 09 -> e5 11
+            
+            - this code is located in "1"
+              - 06028f6e = 10f6e
+                - load addr = 06018000
+                - but not all code!
+      - 06028fb8: every 2nd char? 
+        - 06028fbc: ?
+          - 
+          
+06028f5d: max character per line before auto-wrapping
+
+change spacing between characters:
+  06028f6d (10f6d): 11 -> 09
+fix interdependency between char spacing and height:
+  06028f9e (10f9e): 00 09 -> E5 11
+modify max characters per line:
+  06028f5d (10f5d): 0F -> 1E (probably)
+
+related:
+  00282827
+  0028285b
+  0028288f
+  06004003 - global frame counter
+  060522f3 - 2b?
+  06052567 - 2b?
+  06056693
+  060566a8 = 4b script pointer for text?
+    - written at 06023c7a
+  060a111f
+  060a26c3
+  060ffc67
+  
+  
+***BATTLE***
+
+
+  0603e0d4: call to 0603f512 that sets up most battle text?
+    - but magic descriptions and battle messages are already done??
+    
+0605F594 (battle): インセクトボラス
+  - this name is copied to 060999f0?
+      - read at 060551fe (string length finder?)
+    - called at 0603f74c
+      - do not nop call
+    - then calls 060550b8
+    - eventually, calls 06033eac (at 0603f814?)
+      - this clears existing text off the screen
+    - call 06038114
+      - ? ret freezes
+    - 060551f8 (at 0603f74c)
+    - 060550b8 (at 0603f75a)
+  - at battle start, all of that (0603f684) is called at 0603e21c
+  
+  - this whole routine is called at 060340aa at battle start
+    - then 06042c04
+    - rets from 060336f2
+  060551f8 = generic text drawing routine (battle)
+06034060 = draw character status boxes?
+  - called at 060336f2
+  
+060340a8: draw battle text?
+  - 060551f8: compute string length?
+  
+06034060
+  - from 060334ac
+  
+060340d6: call 06033fac
+  - this is called at 0603f82e
+    - part of routine at 06038114?
+  - 06033fac: ret for no battle text
+  
+060334b0: ?
+
+0603f684: draw enemy name? -- called at 0603e21c
+  - 0603f6a8: call 06035b88
+  - 0603f6c0: call 0605b298 (can loop)
+  - 0603f74c: call to 060551f8 to determine string length(?)
+  - 0603f75a: ? call 060550b8
+    - rts of called routine causes weird behavior
+    - nop of call causes odd artifacting
+  - 0603f7be: check if only 1 enemy, so no quantity???
+  - 0603f814: call 06033eac (clear text?)
+  - 0603f82e: call 06038114, probably to draw text
+  
+06038114: draw some kinds of text???
+  - enemy names, end of battle messages (except names and numbers)
+  - but not labels, etc.
+  - first call: 0603f82e (enemy name)
+  - :
+    - 06038126: call 060336e8
+    - 06038130: call 06033714 (this is called constantly)
+    - 06038136: call 06033738
+    - 0603813C: call 06033ec0
+    - 06038142: call 0603396c
+      ------ THIS THIS THIS
+    - 06038148: call 06033e94
+    
+0603e222: call 060328a4
+  - ?
+  
+heh, THISISDUMMYSPACE
+
+  
+0603396c: PRINT THE TEXT
+  - at time function is called (ex. 0603f512), text printing struct is
+    already loaded?
+    r4 = pointer?
+    - 0603f512 (battle setup?) is part of 0603f384 -- called at 0603e0d4
+      - bingo? at 0603f3b6, spacing1 = #17?
+  - 060339da: jump to something
+    - 060339fe for something
+  - 06033984: nop for no text
+    - 0603385C
+    - doesn't appear to do much?
+  - 06033998: prep string for printing by converting from raw encoding
+              to printable?
+              nop for freeze
+    - 06033924: call 06033f5c?
+    - part of a loop that does ???
+    - r12 = terminator????
+    - r11 = ? add a0?
+      - e.g. 060d4f34
+    - r10 = ? constant(?) address, add charcount * 4 to get ???
+      - 060ffb40
+    - r9 = character count?
+      - 06033f6c: call 06033d04
+        - !!!at 06033d5c, r4=8343/イ !!!
+        - from r5 (060dfa39)
+        - 06033db8: call 06032120
+        - 06033d78: read from low work ram (002ff0a8) = 00 28
+        - 06033d8c: search loop through part of low work ram??
+          - looking for characters??
+  - 06033b62 (1bb62): call 06032296 (1a296) -- nop for no text (except numbers)
+    - get a character graphic?
+    - always called twice, if at all?
+      - could this be regular text + generated outline?
+  - 06033c2c: nop for no text
+  - 06033c34: nop for no text
+  
+2:1B924 = 06033924
+  - diff = 18000
+  
+OK:
+  - 06033c3c (1BC3C): printing characters -- we're looking up spacing info from
+    the printing struct?
+    part of routine at 0603396C (1B96C)
+    r8 = pointer to printing struct (dynamically allocated)
+      - r8 + E4 = char spacing 1? (positive)
+      - r8 + DC = char spacing 2? (negative)
+      - r8 + F0 = x-position?
+
+; prep string for printing?
+; looks up stuff from tables and puts on stack?
+; called at 06033998 (
+0x0001B8E0: 0x2F86	mov.l	r8,@-r15
+0x0001B8E2: 0x2F96	mov.l	r9,@-r15
+0x0001B8E4: 0x2FA6	mov.l	r10,@-r15
+0x0001B8E6: 0x2FB6	mov.l	r11,@-r15
+0x0001B8E8: 0x2FC6	mov.l	r12,@-r15
+0x0001B8EA: 0x2FD6	mov.l	r13,@-r15
+0x0001B8EC: 0x2FE6	mov.l	r14,@-r15
+0x0001B8EE: 0x4F22	sts.l	pr,@-r15
+0x0001B8F0: 0x6EF3	mov	r15,r14
+0x0001B8F2: 0x6B43	mov	r4,r11
+0x0001B8F4: 0x9034	mov.w	@(0x06C,pc),r0	; 0x0001B960 (0x00EC)
+0x0001B8F6: 0x00BE	mov.l	@(r0,r11),r0
+0x0001B8F8: 0x8802	cmp/eq	#0x02,r0
+0x0001B8FA: 0x8D0A	bt/s	0x0001B912
+0x0001B8FC: 0x6A53	mov	r5,r10
+0x0001B8FE: 0xE101	mov	#0x01,r1
+0x0001B900: 0x2A12	mov.l	r1,@r10
+0x0001B902: 0x7A04	add	#0x04,r10
+0x0001B904: 0x952D	mov.w	@(0x05E,pc),r5	; 0x0001B962 (0x00A0)
+0x0001B906: 0x35BC	add	r11,r5
+0x0001B908: 0xD116	mov.l	@(0x05C,pc),r1	; 0x0001B964 (0x06033F5C) 
+0x0001B90A: 0x410B	jsr	@r1
+0x0001B90C: 0x66A3	mov	r10,r6
+0x0001B90E: 0xA01E	bra	0x0001B94E
+0x0001B910: 0x6FE3	mov	r14,r15
+0x0001B912: 0xE901	mov	#0x01,r9
+0x0001B914: 0xDD13	mov.l	@(0x050,pc),r13	; 0x0001B964 (0x06033F5C) 
+0x0001B916: 0xDC14	mov.l	@(0x054,pc),r12	; 0x0001B968 (0x80000000) 
+0x0001B918: 0x6893	mov	r9,r8
+; r9 = charnum
+; r10 = ? stack addr
+; r11 = ?
+; r12 = terminator flag?
+; charnum * 4
+0x0001B91A: 0x4808	shll2	r8
+0x0001B91C: 0x66A3	mov	r10,r6
+0x0001B91E: 0x368C	add	r8,r6
+0x0001B920: 0x951F	mov.w	@(0x042,pc),r5	; 0x0001B962 (0x00A0)
+0x0001B922: 0x35BC	add	r11,r5
+; ! 06033924 -- call 1bf5c -- character lookup?
+0x0001B924: 0x4D0B	jsr	@r13
+0x0001B926: 0x64B3	mov	r11,r4
+0x0001B928: 0x60A3	mov	r10,r0
+; ex. 060ffb68 + (charnum * 4)
+; get last prepped char?
+0x0001B92A: 0x018E	mov.l	@(r0,r8),r1
+0x0001B92C: 0x21C9	and	r12,r1
+0x0001B92E: 0x2118	tst	r1,r1
+; check for terminator
+0x0001B930: 0x8B02	bf	0x0001B938
+0x0001B932: 0x7901	add	#0x01,r9
+0x0001B934: 0xAFF1	bra	0x0001B91A
+0x0001B936: 0x6893	mov	r9,r8
+; done -- string prepped?
+0x0001B938: 0x6093	mov	r9,r0
+0x0001B93A: 0x8801	cmp/eq	#0x01,r0
+0x0001B93C: 0x8D06	bt/s	0x0001B94C
+0x0001B93E: 0x2A92	mov.l	r9,@r10
+0x0001B940: 0x79FF	add	#0xFF,r9
+0x0001B942: 0x2A92	mov.l	r9,@r10
+0x0001B944: 0x900D	mov.w	@(0x01E,pc),r0	; 0x0001B962 (0x00A0)
+0x0001B946: 0x01BE	mov.l	@(r0,r11),r1
+0x0001B948: 0x71FF	add	#0xFF,r1
+0x0001B94A: 0x0B16	mov.l	r1,@(r0,r11)
+0x0001B94C: 0x6FE3	mov	r14,r15
+0x0001B94E: 0x4F26	lds.l	@r15+,pr
+0x0001B950: 0x6EF6	mov.l	@r15+,r14
+0x0001B952: 0x6DF6	mov.l	@r15+,r13
+0x0001B954: 0x6CF6	mov.l	@r15+,r12
+0x0001B956: 0x6BF6	mov.l	@r15+,r11
+0x0001B958: 0x6AF6	mov.l	@r15+,r10
+0x0001B95A: 0x69F6	mov.l	@r15+,r9
+0x0001B95C: 0x000B	rts
+0x0001B95E: 0x68F6	mov.l	@r15+,r8
+
+; 
+0x0001BF5C: 0x2F86	mov.l	r8,@-r15
+0x0001BF5E: 0x2F96	mov.l	r9,@-r15
+0x0001BF60: 0x2FE6	mov.l	r14,@-r15
+0x0001BF62: 0x4F22	sts.l	pr,@-r15
+0x0001BF64: 0x6EF3	mov	r15,r14
+0x0001BF66: 0x6953	mov	r5,r9
+0x0001BF68: 0x6863	mov	r6,r8
+0x0001BF6A: 0xD00E	mov.l	@(0x03C,pc),r0	; 0x0001BFA4 (0x06033D04) 
+; call 1bd04 -- character lookup?
+0x0001BF6C: 0x400B	jsr	@r0
+0x0001BF6E: 0x6592	mov.l	@r9,r5
+; check return value
+0x0001BF70: 0x8801	cmp/eq	#0x01,r0
+0x0001BF72: 0x8D0A	bt/s	0x0001BF8A
+0x0001BF74: 0xE101	mov	#0x01,r1
+0x0001BF76: 0x3012	cmp/hs	r1,r0
+0x0001BF78: 0x8F04	bf/s	0x0001BF84
+0x0001BF7A: 0x8802	cmp/eq	#0x02,r0
+0x0001BF7C: 0x8909	bt	0x0001BF92
+0x0001BF7E: 0x6FE3	mov	r14,r15
+0x0001BF80: 0xA00C	bra	0x0001BF9C
+0x0001BF82: 0x4F26	lds.l	@r15+,pr
+; branch taken when 1bd04 returns 0?
+0x0001BF84: 0x6192	mov.l	@r9,r1
+0x0001BF86: 0xA006	bra	0x0001BF96
+0x0001BF88: 0x7102	add	#0x02,r1
+0x0001BF8A: 0x6282	mov.l	@r8,r2
+0x0001BF8C: 0xD106	mov.l	@(0x01C,pc),r1	; 0x0001BFA8 (0x80000000) 
+0x0001BF8E: 0x221B	or	r1,r2
+0x0001BF90: 0x2822	mov.l	r2,@r8
+0x0001BF92: 0x6192	mov.l	@r9,r1
+0x0001BF94: 0x7101	add	#0x01,r1
+; to ex. 060d726c?
+0x0001BF96: 0x2912	mov.l	r1,@r9
+0x0001BF98: 0x6FE3	mov	r14,r15
+0x0001BF9A: 0x4F26	lds.l	@r15+,pr
+0x0001BF9C: 0x6EF6	mov.l	@r15+,r14
+0x0001BF9E: 0x69F6	mov.l	@r15+,r9
+0x0001BFA0: 0x000B	rts
+0x0001BFA2: 0x68F6	mov.l	@r15+,r8
+
+; 
+0x0001BD04: 0x2F86	mov.l	r8,@-r15
+0x0001BD06: 0x2F96	mov.l	r9,@-r15
+0x0001BD08: 0x2FE6	mov.l	r14,@-r15
+0x0001BD0A: 0x4F22	sts.l	pr,@-r15
+0x0001BD0C: 0x6EF3	mov	r15,r14
+0x0001BD0E: 0x6243	mov	r4,r2
+0x0001BD10: 0x6863	mov	r6,r8
+0x0001BD12: 0x6154	mov.b	@r5+,r1
+0x0001BD14: 0x641C	extu.b	r1,r4
+0x0001BD16: 0x6043	mov	r4,r0
+0x0001BD18: 0x880E	cmp/eq	#0x0E,r0
+0x0001BD1A: 0x8D07	bt/s	0x0001BD2C
+0x0001BD1C: 0xE900	mov	#0x00,r9
+0x0001BD1E: 0xE10E	mov	#0x0E,r1
+0x0001BD20: 0x3416	cmp/hi	r1,r4
+0x0001BD22: 0x8906	bt	0x0001BD32
+0x0001BD24: 0xD12A	mov.l	@(0x0AC,pc),r1	; 0x0001BDD0 (0x0605FE88) 
+0x0001BD26: 0x6112	mov.l	@r1,r1
+0x0001BD28: 0x2118	tst	r1,r1
+0x0001BD2A: 0x8B02	bf	0x0001BD32
+0x0001BD2C: 0x2842	mov.l	r4,@r8
+0x0001BD2E: 0xA047	bra	0x0001BDC0
+0x0001BD30: 0xE001	mov	#0x01,r0
+0x0001BD32: 0x904B	mov.w	@(0x09A,pc),r0	; 0x0001BDCC (0x00C8)
+0x0001BD34: 0x002E	mov.l	@(r0,r2),r0
+0x0001BD36: 0x8801	cmp/eq	#0x01,r0
+0x0001BD38: 0x8B04	bf	0x0001BD44
+0x0001BD3A: 0x4408	shll2	r4
+0x0001BD3C: 0x344C	add	r4,r4
+0x0001BD3E: 0x2842	mov.l	r4,@r8
+0x0001BD40: 0xA03E	bra	0x0001BDC0
+0x0001BD42: 0xE002	mov	#0x02,r0
+0x0001BD44: 0x9143	mov.w	@(0x08A,pc),r1	; 0x0001BDCE (0x0080)
+0x0001BD46: 0x2149	and	r4,r1
+0x0001BD48: 0x2118	tst	r1,r1
+0x0001BD4A: 0x8F04	bf/s	0x0001BD56
+0x0001BD4C: 0x4418	shll8	r4
+0x0001BD4E: 0xE020	mov	#0x20,r0
+0x0001BD50: 0x240B	or	r0,r4
+0x0001BD52: 0xA003	bra	0x0001BD5C
+0x0001BD54: 0xE902	mov	#0x02,r9
+0x0001BD56: 0x6150	mov.b	@r5,r1
+0x0001BD58: 0x611C	extu.b	r1,r1
+0x0001BD5A: 0x241B	or	r1,r4
+; at this point, r4 = raw id of char to print?
+; the next part of the routine is looking up the position of the
+; graphic for this id?
+0x0001BD5C: 0xD11D	mov.l	@(0x078,pc),r1	; 0x0001BDD4 (0x06086248) 
+0x0001BD5E: 0x6212	mov.l	@r1,r2
+0x0001BD60: 0x6121	mov.w	@r2,r1
+0x0001BD62: 0x611D	extu.w	r1,r1
+0x0001BD64: 0x6013	mov	r1,r0
+0x0001BD66: 0x4001	shlr	r0
+0x0001BD68: 0x70FF	add	#0xFF,r0
+0x0001BD6A: 0x4008	shll2	r0
+0x0001BD6C: 0x300C	add	r0,r0
+0x0001BD6E: 0x4008	shll2	r0
+0x0001BD70: 0x301C	add	r1,r0
+0x0001BD72: 0x6703	mov	r0,r7
+0x0001BD74: 0x372C	add	r2,r7
+0x0001BD76: 0xE300	mov	#0x00,r3
+0x0001BD78: 0x012D	mov.w	@(r0,r2),r1
+0x0001BD7A: 0x611D	extu.w	r1,r1
+0x0001BD7C: 0x71FE	add	#0xFE,r1
+0x0001BD7E: 0x3313	cmp/ge	r1,r3
+0x0001BD80: 0x8D0C	bt/s	0x0001BD9C
+0x0001BD82: 0x6673	mov	r7,r6
+0x0001BD84: 0x6171	mov.w	@r7,r1
+0x0001BD86: 0x621D	extu.w	r1,r2
+0x0001BD88: 0x72FE	add	#0xFE,r2
+0x0001BD8A: 0x7602	add	#0x02,r6
+0x0001BD8C: 0x6161	mov.w	@r6,r1
+0x0001BD8E: 0x611D	extu.w	r1,r1
+0x0001BD90: 0x3412	cmp/hs	r1,r4
+0x0001BD92: 0x8B03	bf	0x0001BD9C
+0x0001BD94: 0x7301	add	#0x01,r3
+0x0001BD96: 0x3323	cmp/ge	r2,r3
+0x0001BD98: 0x8FF8	bf/s	0x0001BD8C
+0x0001BD9A: 0x7602	add	#0x02,r6
+; matching LUT found? -- get graphic pointer?
+0x0001BD9C: 0x6771	mov.w	@r7,r7
+0x0001BD9E: 0x677D	extu.w	r7,r7
+0x0001BDA0: 0x0377	mul.l	r7,r3
+0x0001BDA2: 0x061A	sts	macl,r6
+0x0001BDA4: 0x6163	mov	r6,r1
+0x0001BDA6: 0x4104	rotl	r1
+0x0001BDA8: 0x0129	movt	r1
+0x0001BDAA: 0x361C	add	r1,r6
+0x0001BDAC: 0x4621	shar	r6
+0x0001BDAE: 0xD109	mov.l	@(0x028,pc),r1	; 0x0001BDD4 (0x06086248) 
+0x0001BDB0: 0x051A	sts	macl,r5
+0x0001BDB2: 0x355C	add	r5,r5
+0x0001BDB4: 0x6112	mov.l	@r1,r1
+0x0001BDB6: 0xD008	mov.l	@(0x024,pc),r0	; 0x0001BDD8 (0x06032120) 
+; call 1a120
+; nop = garbage is drawn
+0x0001BDB8: 0x400B	jsr	@r0
+0x0001BDBA: 0x351C	add	r1,r5
+; get return value -- put on stack? (ex. 060ffb6c)
+0x0001BDBC: 0x2802	mov.l	r0,@r8
+0x0001BDBE: 0x6093	mov	r9,r0
+0x0001BDC0: 0x6FE3	mov	r14,r15
+0x0001BDC2: 0x4F26	lds.l	@r15+,pr
+0x0001BDC4: 0x6EF6	mov.l	@r15+,r14
+0x0001BDC6: 0x69F6	mov.l	@r15+,r9
+0x0001BDC8: 0x000B	rts
+0x0001BDCA: 0x68F6	mov.l	@r15+,r8
+
+; character lookup??
+; returns something in r0
+0x0001A120: 0x4F12	sts.l	macl,@-r15
+0x0001A122: 0x6153	mov	r5,r1
+0x0001A124: 0x461A	lds	r6,macl
+0x0001A126: 0x255A	xor	r5,r5
+0x0001A128: 0xD009	mov.l	@(0x028,pc),r0	; 0x0001A150 (0x06086248) 
+0x0001A12A: 0xD60A	mov.l	@(0x02C,pc),r6	; 0x0001A154 (0x0000FFFF) 
+0x0001A12C: 0x6302	mov.l	@r0,r3
+; 002f2000 = kanji table?
+0x0001A12E: 0x6231	mov.w	@r3,r2
+0x0001A130: 0x6063	mov	r6,r0
+0x0001A132: 0x6316	mov.l	@r1+,r3
+0x0001A134: 0x2039	and	r3,r0
+0x0001A136: 0x3040	cmp/eq	r4,r0
+0x0001A138: 0x8D0E	bt/s	0x0001A158
+0x0001A13A: 0x4329	shlr16	r3
+0x0001A13C: 0x3340	cmp/eq	r4,r3
+0x0001A13E: 0x8D14	bt/s	0x0001A16A
+0x0001A140: 0x7501	add	#0x01,r5
+0x0001A142: 0x3570	cmp/eq	r7,r5
+; loop until ??? found??
+0x0001A144: 0x8FF5	bf/s	0x0001A132
+0x0001A146: 0x6063	mov	r6,r0
+; not found??
+0x0001A148: 0x6023	mov	r2,r0
+0x0001A14A: 0x000B	rts
+0x0001A14C: 0x4F16	lds.l	@r15+,macl
+0x0001A14E: 0x0009	nop
+0x0001A150: 0x0608	.long	0x06086248	; 0x0001A128
+0x0001A152: 0x6248	
+0x0001A154: 0x0000	.long	0x0000FFFF	; 0x0001A128
+0x0001A156: 0xFFFF	
+0x0001A158: 0x011A	sts	macl,r1
+0x0001A15A: 0x351C	add	r1,r5
+0x0001A15C: 0x4508	shll2	r5
+0x0001A15E: 0x4508	shll2	r5
+0x0001A160: 0x4508	shll2	r5
+0x0001A162: 0x352C	add	r2,r5
+0x0001A164: 0x4F16	lds.l	@r15+,macl
+0x0001A166: 0x000B	rts
+0x0001A168: 0x6053	mov	r5,r0
+0x0001A16A: 0x75FF	add	#0xFF,r5
+0x0001A16C: 0x011A	sts	macl,r1
+0x0001A16E: 0x351C	add	r1,r5
+0x0001A170: 0x4500	shll	r5
+0x0001A172: 0x75FF	add	#0xFF,r5
+0x0001A174: 0x4508	shll2	r5
+0x0001A176: 0x4508	shll2	r5
+0x0001A178: 0x4500	shll	r5
+0x0001A17A: 0x352C	add	r2,r5
+0x0001A17C: 0x4F16	lds.l	@r15+,macl
+0x0001A17E: 0x000B	rts
+0x0001A180: 0x6053	mov	r5,r0
+
+
+***OVERWORLD MENUS***
+
+  - 0602C330: システム
+    - read at 0603d198
+      - called at 0604ab5e (32b5e)
+        - is this possibly part of 0604a9c8?
+    - also at 0604e878
+      - strlen?
+    - this gets copied to 060fed78
+      - read at 0601fbce
+        - something something, 060314ca?
+          - works fine when nopped, so no
+  - 0604a9c8
+    - this seems to be called once per printed string?
+    - called from 0604a950
+      - which is part of 0604a940?, called at 0604a5b6
+        - part of 0604a590, called at 06029e1c
+    - ret for no text (menu and status)
+    - this is at least prepping the text somehow, but probably not printing?
+    - r4 = ?
+    - r5 = address to copy prepped(?) string to?
+    - r6 = address of source string
+    - r7 = ?
+      - call 0604ce88
+      - at 0604ab5e, call 0604d180 (in loop, once per byte(?) in input?)
+      - can jump to 0604c860 (34860)
+        - at 0604c872, call 0604A870
+          - this isn't called for e.g. %3d
+          - calls 0604caa0
+            - calls 0604e840
+              - this copies the source string to r2?
+              - e.g. 06031328 to 060fe14b
+            - loop??
+          - ?
+    - after calling 0604a940 at 0604a5b6, r14 = pointer to prepped stuff struct?
+      - struct is 88 bytes?
+        - 0: pointer to end?
+        - 4: ?
+        - 8: ?
+        - 12: ?
+        - 16: pointer to raw string?
+  - after calling 0604a590 at 0601fbc0, ?
+    - r15 = pointer to raw string?
+    - ok, and then we go through the same codepoint search?
+    - 0601fc28 = check for ??
+  - 0601fbc4: after call to 0604a590
+    - 0601ff20: nop for no full-width text
+      - this prints one full-width character?
+      - calls 06020034 (8034)
+        - 8052: clears memory?
+          - nop causes artifacts, but text is still printed
+        - 8062: search index of KANJI.FNT for character given by r5,
+          then return graphic's address in r0
+          - nop causes uniform garbage
