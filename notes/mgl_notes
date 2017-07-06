@@ -31,13 +31,41 @@
     
 ***DIALOGUE 8-BIT ENCODING HACK***
 NOP the following in "1":
-  0x00010F44: 0x4418	shll8	r4
-  0x00010F46: 0x7201	add	#0x01,r2
-  0x00010F4C: 0x72FF	add	#0xFF,r2
-  0x00010F4E: 0x6120	mov.b	@r2,r1
-  0x00010F52: 0x611C	extu.b	r1,r1
-  0x00010F54: 0x341C	add	r1,r4
+  ;0x00010F44: 0x4418	shll8	r4
+  ;0x00010F46: 0x7201	add	#0x01,r2
+  ;0x00010F4C: 0x72FF	add	#0xFF,r2
+  ;0x00010F4E: 0x6120	mov.b	@r2,r1
+  ;0x00010F52: 0x611C	extu.b	r1,r1
+  ;0x00010F54: 0x341C	add	r1,r4
+  
+***MENU 8-BIT ENCODING HACK***
+in "1":
+  NOP the following:
+    ; 16-bit char: fetch second byte
+    ;0x00007CC4: 0x01DC	mov.b	@(r0,r13),r1
+    ;0x00007CC6: 0x4918	shll8	r9
+    ;0x00007CC8: 0x611C	extu.b	r1,r1
+    ;0x00007CCA: 0x291B	or	r1,r9
+    ;0x00007CCC: 0x7D01	add	#0x01,r13
+    ; check whether to draw full or halfwidth
+    ;0x00007CCE: 0x915F	mov.w	@(0x0C2,pc),r1	; 0x00007D90 (0x7FFF)
+    ;0x00007CD0: 0x3916	cmp/hi	r1,r9
+    ; branch if rawchar < 0x8000 (halfwidth)
+    ;0x00007CD2: 0x8B01	bf	0x00007CD8
+    - this method treats everything as fullwidth, and requires the special
+      nonstandard characters in ASCII.FNT to be represented in the updated
+      KANJI.FNT
+  modify 7F00: 00 00 81 97 -> 00 00 00 40
+    - the game does not directly store the halfwidth "Lv" string used on
+      the main menu and status screen, but instead special-cases character
+      8197 (sjis "@") as a placeholder indicating this string should be drawn.
+      since we're not using 16-bit encoding anymore, this changes the
+      special character to 0040 (ascii "@")
+  modify 1921A: 81 97 25 32 64 00 -> 04 25 32 64 00 00
+    - this updates the printstring for character levels to accomodate the
+      change above ("%s＠%2d\x00" -> "%s@%2d\x00\x00")
     
+ff986
     
 ***GENERAL***
 
@@ -569,55 +597,90 @@ OK:
 
 ***OVERWORLD MENUS***
 
-  - 0602C330: システム
-    - read at 0603d198
-      - called at 0604ab5e (32b5e)
-        - is this possibly part of 0604a9c8?
-    - also at 0604e878
-      - strlen?
-    - this gets copied to 060fed78
-      - read at 0601fbce
-        - something something, 060314ca?
-          - works fine when nopped, so no
-  - 0604a9c8
-    - this seems to be called once per printed string?
-    - called from 0604a950
-      - which is part of 0604a940?, called at 0604a5b6
-        - part of 0604a590, called at 06029e1c
-    - ret for no text (menu and status)
-    - this is at least prepping the text somehow, but probably not printing?
-    - r4 = ?
-    - r5 = address to copy prepped(?) string to?
-    - r6 = address of source string
-    - r7 = ?
-      - call 0604ce88
-      - at 0604ab5e, call 0604d180 (in loop, once per byte(?) in input?)
-      - can jump to 0604c860 (34860)
-        - at 0604c872, call 0604A870
-          - this isn't called for e.g. %3d
-          - calls 0604caa0
-            - calls 0604e840
-              - this copies the source string to r2?
-              - e.g. 06031328 to 060fe14b
-            - loop??
-          - ?
-    - after calling 0604a940 at 0604a5b6, r14 = pointer to prepped stuff struct?
-      - struct is 88 bytes?
-        - 0: pointer to end?
-        - 4: ?
-        - 8: ?
-        - 12: ?
-        - 16: pointer to raw string?
-  - after calling 0604a590 at 0601fbc0, ?
-    - r15 = pointer to raw string?
-    - ok, and then we go through the same codepoint search?
-    - 0601fc28 = check for ??
-  - 0601fbc4: after call to 0604a590
-    - 0601ff20: nop for no full-width text
-      - this prints one full-width character?
-      - calls 06020034 (8034)
-        - 8052: clears memory?
-          - nop causes artifacts, but text is still printed
-        - 8062: search index of KANJI.FNT for character given by r5,
-          then return graphic's address in r0
-          - nop causes uniform garbage
+- 0602C330: システム
+  - read at 0603d198
+    - called at 0604ab5e (32b5e)
+      - is this possibly part of 0604a9c8?
+  - also at 0604e878
+    - strlen?
+  - this gets copied to 060fed78
+    - read at 0601fbce
+      - something something, 060314ca?
+        - works fine when nopped, so no
+- 0604a9c8
+  - this seems to be called once per printed string?
+  - called from 0604a950
+    - which is part of 0604a940?, called at 0604a5b6
+      - part of 0604a590, called at 06029e1c
+  - ret for no text (menu and status)
+  - this is at least prepping the text somehow, but probably not printing?
+  - r4 = ?
+  - r5 = address to copy prepped(?) string to?
+  - r6 = address of source string
+  - r7 = ?
+    - call 0604ce88
+    - at 0604ab5e, call 0604d180 (in loop, once per byte(?) in input?)
+    - can jump to 0604c860 (34860)
+      - at 0604c872, call 0604A870
+        - this isn't called for e.g. %3d
+        - calls 0604caa0
+          - calls 0604e840
+            - this copies the source string to r2?
+            - e.g. 06031328 to 060fe14b
+          - loop??
+        - ?
+  - after calling 0604a940 at 0604a5b6, r14 = pointer to prepped stuff struct?
+    - struct is 88 bytes?
+      - 0: pointer to end?
+      - 4: ?
+      - 8: ?
+      - 12: ?
+      - 16: pointer to raw string?
+- after calling 0604a590 at 0601fbc0, ?
+  - r15 = pointer to raw string?
+  - ok, and then we go through the same codepoint search?
+  - 0601fc28 = check for ??
+- 0601fbc4: after call to 0604a590
+  - 0601ff20: nop for no full-width text
+    - this prints one full-width character?
+    - calls 06020034 (8034)
+      - 8052: clears memory?
+        - nop causes artifacts, but text is still printed
+      - 8062: search index of KANJI.FNT for character given by r5,
+        then return graphic's address in r0
+        - nop causes uniform garbage
+        
+7CC4 = get raw character when printing menus
+  - unlike dialogue, character number is used to determine which font to
+    use for printing
+    - >= 0x8000 is whole-width?
+    - others are half-width??
+
+** 8-bit menu text hack 1:
+  originally, the game uses a printing routine that dispatches off the
+  value of the first byte read from the character string, where values <= 7F
+  are 8-bit halfwidth characters (and are printed as such) and values >= 80
+  are the first byte of a 16-bit fullwidth character.
+  we intend to print all text as fullwidth (since we've actually reduced it
+  to halfwidth), so we simply treat all values as 8-bit fullwidth by nopping
+  the following:
+; 16-bit char: fetch second byte
+;0x00007CC4: 0x01DC	mov.b	@(r0,r13),r1
+;0x00007CC6: 0x4918	shll8	r9
+;0x00007CC8: 0x611C	extu.b	r1,r1
+;0x00007CCA: 0x291B	or	r1,r9
+;0x00007CCC: 0x7D01	add	#0x01,r13
+; check whether to draw full or halfwidth
+;0x00007CCE: 0x915F	mov.w	@(0x0C2,pc),r1	; 0x00007D90 (0x7FFF)
+;0x00007CD0: 0x3916	cmp/hi	r1,r9
+; branch if rawchar < 0x8000 (halfwidth)
+;0x00007CD2: 0x8B01	bf	0x00007CD8
+  this will work once KANJI.FNT is updated to use the pseudo-halfwidth font;
+  however, special characters from the halfwidth font ("Lv", etc.) will have
+  to be represented as well, or the source strings will need to be modified
+  appropriately.
+  an alternative approach would be to treat everything as halfwidth
+  
+0604e840: copy a string? (ellie's name on main menu)
+  - called at 0604cb62
+
