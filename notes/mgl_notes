@@ -29,11 +29,19 @@
   0603f560 (27560): E1 FF -> E1 F7
     - character names on menu
     
+***DIALOGUE 8-BIT ENCODING HACK***
+NOP the following in "1":
+  0x00010F44: 0x4418	shll8	r4
+  0x00010F46: 0x7201	add	#0x01,r2
+  0x00010F4C: 0x72FF	add	#0xFF,r2
+  0x00010F4E: 0x6120	mov.b	@r2,r1
+  0x00010F52: 0x611C	extu.b	r1,r1
+  0x00010F54: 0x341C	add	r1,r4
     
     
 ***GENERAL***
 
-  - 0020f2000: KANJI.FNT
+  - 002f2000: KANJI.FNT
   - 0 code file: ?
   - 1: loaded to 06018000 on overworld?
   - 2: ?
@@ -73,7 +81,66 @@
         - 06028fbc: ?
           - 
           
-06028f5d: max character per line before auto-wrapping
+060185ac: call 06028dac (print or prep character?)
+  - 06028dac (10dac):
+    - 
+    
+06028e98 (10e98): read next byte from dialogue text script
+  - if byte is >= 0x20, it's assumed to be the first byte of a 2-byte
+    printable character
+    - jumps to handler at 06028f44 (10F44)
+  - if byte is < 0x20, it's a control opcode(?)
+    - opcodes 0x0e? to 0x1F don't exist and are simply skipped over?
+    - opcode number is used as index into 2b offset table at 10EC0 --
+      add offset to table address to get handler to jump to?
+      - most opcodes are ignored and just jump back to the "next byte" routine
+      - handled opcodes:
+        - 00: 10F14
+          - end of text
+        - 08: 10F1C
+          - end current text box, wait for player input
+        - 0a: 10F24
+          - newline
+        - 0c: 10F30
+          - ?
+        - 0d: 10F3C
+          - ?
+
+; fetch 2-byte raw character literal
+; shift the first character to the high position
+;
+; NOP
+;0x00010F44: 0x4418	shll8	r4
+
+; pre-emptively move the global text pointer to its next position
+;
+; NOP
+;0x00010F46: 0x7201	add	#0x01,r2
+
+0x00010F48: 0xD041	mov.l	@(0x108,pc),r0	; 0x00011050 (0x0601FA10) 
+0x00010F4A: 0x2822	mov.l	r2,@r8
+
+; now move back to the current position and read the low byte of the
+; character
+;
+; NOP
+;0x00010F4C: 0x72FF	add	#0xFF,r2
+;0x00010F4E: 0x6120	mov.b	@r2,r1
+
+0x00010F50: 0x65E3	mov	r14,r5
+
+;
+; NOP
+;0x00010F52: 0x611C	extu.b	r1,r1
+
+; combine low and high bytes into a word
+;
+; NOP
+;0x00010F54: 0x341C	add	r1,r4
+
+
+          
+06028f5d: max characters per line before auto-wrapping
 
 change spacing between characters:
   06028f6d (10f6d): 11 -> 09
@@ -100,8 +167,8 @@ related:
 ***BATTLE***
 
 
-  0603e0d4: call to 0603f512 that sets up most battle text?
-    - but magic descriptions and battle messages are already done??
+0603e0d4: call to 0603f512 that sets up most battle text?
+  - but magic descriptions and battle messages are already done??
     
 0605F594 (battle): インセクトボラス
   - this name is copied to 060999f0?
