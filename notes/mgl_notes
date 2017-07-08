@@ -52,20 +52,23 @@ in "1":
     ;0x00007CD0: 0x3916	cmp/hi	r1,r9
     ; branch if rawchar < 0x8000 (halfwidth)
     ;0x00007CD2: 0x8B01	bf	0x00007CD8
-    - this method treats everything as fullwidth, and requires the special
-      nonstandard characters in ASCII.FNT to be represented in the updated
-      KANJI.FNT
+    - this method treats all text as 8-bit fullwidth, except for the "Lv"
+      indicator (see below), which will be printed using the halfwidth font
+      - when printing halfwidth text, the game automatically converts the input
+        ASCII numbers to their actual indices in ASCII.FNT; I'm hoping it does
+        the same for ":" and "/"
   modify 7F00: 00 00 81 97 -> 00 00 00 40
     - the game does not directly store the halfwidth "Lv" string used on
       the main menu and status screen, but instead special-cases character
       8197 (sjis "@") as a placeholder indicating this string should be drawn.
       since we're not using 16-bit encoding anymore, this changes the
       special character to 0040 (ascii "@")
-  modify 1921A: 81 97 25 32 64 00 -> 04 25 32 64 00 00
-    - this updates the printstring for character levels to accomodate the
-      change above ("%s＠%2d\x00" -> "%s@%2d\x00\x00")
-    
-ff986
+  ------- don't do this one: we'll update this manually when the translated
+    strings are imported
+    modify 1921A: 81 97 25 32 64 00 -> 04 25 32 64 00 00
+    - this updates the printstring for character levels to accommodate the
+      change above ("%s＠%2d" -> "%s@%2d\x00")
+
     
 ***GENERAL***
 
@@ -310,9 +313,95 @@ OK:
       - r8 + DC = char spacing 2? (negative)
       - r8 + F0 = x-position?
 
+060d7690 = ????
+06033d04 = routine
+fails after drawing ？？？？ and before エリー
+  - エリー : d7a28
+  - call to draw: 06033998?
+ - battle won string: copied to e0d70
+  - from 060325c4 (1a5c4)
+    - read at 0603402e (1c02e) -- that other character check routine
+    - read at 06033cd6 (1bcd6) -- that character check routine
+    - read at 060551fe (3d1fe) -- strlen
+    - read at 06034010 (1c010) -- copy to buffer (ex. 060e0d40)
+      - length for purpose of calculating dialogue box size is computed
+        at some point after 060340d6
+        - copied buffer is read at:
+          - 06033d12 (in character printing routine 1bd04)
+            - this one?
+            - call is at 06033f6c (1bf6c)
+              
+          - 060551fe
+1bdf2: check next character for 1b, 2b, ???
+
+0603396c (1b96c) = function that prints a character string
+  - at 0603399c, r14 = pointer to prepped string
+example decompression buffer: 060d73d4
+  - 0x66 bytes?
+  - cleared at 06032110 (1a110) (memclr)
+    - called at 06033612 (1b612)
+    
+print struct:
+  c0 = decompression buffer pointer???
+  d4 = ? (334b6)
+  dc = spacing (negative)
+  e4 = spacing (positive)
+  e8 = number of decompression chars????
+  f0 = x-position?
+  fc = ? (1bb58)
+
+**** 0x0001C026: 0x7802	add	#0x02,r8
+  -- should this be 1 instead?
+  
+06034c08: エリー (name on menu?)
+  - the call to 0603f684 (27684) at 0603e21c causes the freeze
+    - call to 06038114 (20114) at 0603f82e
+      - call to 060336e8 (1b6e8) at 06038126
+        - call to 06034060 (1c060) at 060336f2
+          - call to 06042c38 (3d1f8 -- strlen) at 060340a4
+0605d31c: エリー (?)
+
+5f594
+5f5f8
+      
+***BATTLE 8-BIT ENCODING HACK***
+in "2":
+  NOP these:
+    ; check if first read byte >= 0x80?
+    ;0x0001BD44: 0x9143	mov.w	@(0x08A,pc),r1	; 0x0001BDCE (0x0080)
+    ;0x0001BD46: 0x2149	and	r4,r1
+    ;0x0001BD48: 0x2118	tst	r1,r1
+    ; branch if >= 0x80, and shift byte to high position
+    ;0x0001BD4A: 0x8F04	bf/s	0x0001BD56
+    ;0x0001BD4C: 0x4418	shll8	r4
+    ; if byte is < 0x80, it's assumed to be a space character (0x20), which for
+    ; some reason are stored as 1-byte sequences instead of 2 bytes like
+    ; everything else
+    ; this code expands them to the proper 2-byte sequence, 0x2020
+    ;0x0001BD4E: 0xE020	mov	#0x20,r0
+    ;0x0001BD50: 0x240B	or	r0,r4
+    ;0x0001BD52: 0xA003	bra	0x0001BD5C
+    ; return value: 0x02
+    ;0x0001BD54: 0xE902	mov	#0x02,r9
+    ; get next character
+    ;0x0001BD56: 0x6150	mov.b	@r5,r1
+    ;0x0001BD58: 0x611C	extu.b	r1,r1
+    ;0x0001BD5A: 0x241B	or	r1,r4
+  and change these:
+    1bf88: 71 02 -> 71 01
+      - advance 1 byte instead of 2
+    1c026: 78 02 -> 78 01
+      - advance 1 byte instead of 2??
+        not sure if this is necessary
+  and NOP this:
+    0x0001B4D6: 0x4B01	shlr	r11
+      - doubles size of the buffers used to decompress font characters;
+        without this, long strings can overflow and crash the game
+
 ; prep string for printing?
 ; looks up stuff from tables and puts on stack?
-; called at 06033998 (
+; called at 06033998 (1B998)
+; this is 060338e0
 0x0001B8E0: 0x2F86	mov.l	r8,@-r15
 0x0001B8E2: 0x2F96	mov.l	r9,@-r15
 0x0001B8E4: 0x2FA6	mov.l	r10,@-r15
@@ -357,22 +446,27 @@ OK:
 0x0001B926: 0x64B3	mov	r11,r4
 0x0001B928: 0x60A3	mov	r10,r0
 ; ex. 060ffb68 + (charnum * 4)
-; get last prepped char?
+; get character graphic address
 0x0001B92A: 0x018E	mov.l	@(r0,r8),r1
 0x0001B92C: 0x21C9	and	r12,r1
 0x0001B92E: 0x2118	tst	r1,r1
-; check for terminator
+; check for terminator (high bit set?)
 0x0001B930: 0x8B02	bf	0x0001B938
 0x0001B932: 0x7901	add	#0x01,r9
 0x0001B934: 0xAFF1	bra	0x0001B91A
 0x0001B936: 0x6893	mov	r9,r8
-; done -- string prepped?
+; done -- all characters ready to draw
+; r9 = number of characters + 1?
+; r10 = pointer to graphic pointer sequence (-4?)
 0x0001B938: 0x6093	mov	r9,r0
+; branch if there are no characters
 0x0001B93A: 0x8801	cmp/eq	#0x01,r0
 0x0001B93C: 0x8D06	bt/s	0x0001B94C
+; write number of characters at start of string
 0x0001B93E: 0x2A92	mov.l	r9,@r10
 0x0001B940: 0x79FF	add	#0xFF,r9
 0x0001B942: 0x2A92	mov.l	r9,@r10
+; subtract 1 from A0 in print struct??
 0x0001B944: 0x900D	mov.w	@(0x01E,pc),r0	; 0x0001B962 (0x00A0)
 0x0001B946: 0x01BE	mov.l	@(r0,r11),r1
 0x0001B948: 0x71FF	add	#0xFF,r1
@@ -388,7 +482,7 @@ OK:
 0x0001B95C: 0x000B	rts
 0x0001B95E: 0x68F6	mov.l	@r15+,r8
 
-; 
+; r5 = pointer to pointer to position in printstring?
 0x0001BF5C: 0x2F86	mov.l	r8,@-r15
 0x0001BF5E: 0x2F96	mov.l	r9,@-r15
 0x0001BF60: 0x2FE6	mov.l	r14,@-r15
@@ -397,11 +491,12 @@ OK:
 0x0001BF66: 0x6953	mov	r5,r9
 0x0001BF68: 0x6863	mov	r6,r8
 0x0001BF6A: 0xD00E	mov.l	@(0x03C,pc),r0	; 0x0001BFA4 (0x06033D04) 
-; call 1bd04 -- character lookup?
+; call 1bd04 -- look up character and get address
 0x0001BF6C: 0x400B	jsr	@r0
 0x0001BF6E: 0x6592	mov.l	@r9,r5
 ; check return value
 0x0001BF70: 0x8801	cmp/eq	#0x01,r0
+; ?????????
 0x0001BF72: 0x8D0A	bt/s	0x0001BF8A
 0x0001BF74: 0xE101	mov	#0x01,r1
 0x0001BF76: 0x3012	cmp/hs	r1,r0
@@ -412,6 +507,7 @@ OK:
 0x0001BF80: 0xA00C	bra	0x0001BF9C
 0x0001BF82: 0x4F26	lds.l	@r15+,pr
 ; branch taken when 1bd04 returns 0?
+; advance getpos by 2
 0x0001BF84: 0x6192	mov.l	@r9,r1
 0x0001BF86: 0xA006	bra	0x0001BF96
 0x0001BF88: 0x7102	add	#0x02,r1
@@ -421,6 +517,7 @@ OK:
 0x0001BF90: 0x2822	mov.l	r2,@r8
 0x0001BF92: 0x6192	mov.l	@r9,r1
 0x0001BF94: 0x7101	add	#0x01,r1
+; store new printpos
 ; to ex. 060d726c?
 0x0001BF96: 0x2912	mov.l	r1,@r9
 0x0001BF98: 0x6FE3	mov	r14,r15
@@ -430,7 +527,14 @@ OK:
 0x0001BFA0: 0x000B	rts
 0x0001BFA2: 0x68F6	mov.l	@r15+,r8
 
-; 
+; read the next raw character for printing
+;
+; r5 = source character data
+;
+; return codes:
+;   0: indicates 2 bytes were read?
+;   1: end of string?
+;   2: indicates 1 byte was read?
 0x0001BD04: 0x2F86	mov.l	r8,@-r15
 0x0001BD06: 0x2F96	mov.l	r9,@-r15
 0x0001BD08: 0x2FE6	mov.l	r14,@-r15
@@ -438,40 +542,60 @@ OK:
 0x0001BD0C: 0x6EF3	mov	r15,r14
 0x0001BD0E: 0x6243	mov	r4,r2
 0x0001BD10: 0x6863	mov	r6,r8
+; fetch first byte
 0x0001BD12: 0x6154	mov.b	@r5+,r1
 0x0001BD14: 0x641C	extu.b	r1,r4
 0x0001BD16: 0x6043	mov	r4,r0
+; branch if byte == 0x0E
 0x0001BD18: 0x880E	cmp/eq	#0x0E,r0
 0x0001BD1A: 0x8D07	bt/s	0x0001BD2C
+; default return value: 0x00
 0x0001BD1C: 0xE900	mov	#0x00,r9
+; branch if byte is > 0x0E
 0x0001BD1E: 0xE10E	mov	#0x0E,r1
 0x0001BD20: 0x3416	cmp/hi	r1,r4
 0x0001BD22: 0x8906	bt	0x0001BD32
 0x0001BD24: 0xD12A	mov.l	@(0x0AC,pc),r1	; 0x0001BDD0 (0x0605FE88) 
 0x0001BD26: 0x6112	mov.l	@r1,r1
+; branch if the static variable at 0605fe88 is zero
+;   -- this is set after battle at 06033a14
 0x0001BD28: 0x2118	tst	r1,r1
 0x0001BD2A: 0x8B02	bf	0x0001BD32
+; first byte is 0x0E, or 0605fe88 is nonzero -- skip printing??
 0x0001BD2C: 0x2842	mov.l	r4,@r8
 0x0001BD2E: 0xA047	bra	0x0001BDC0
+; return value: 0x01
 0x0001BD30: 0xE001	mov	#0x01,r0
+; check if some value in print struct? is 0x01
+; this seems to be set for printing 8x8 text?
 0x0001BD32: 0x904B	mov.w	@(0x09A,pc),r0	; 0x0001BDCC (0x00C8)
 0x0001BD34: 0x002E	mov.l	@(r0,r2),r0
 0x0001BD36: 0x8801	cmp/eq	#0x01,r0
 0x0001BD38: 0x8B04	bf	0x0001BD44
+; executed if checked value is 0x01 -- skips actual graphic lookup?
 0x0001BD3A: 0x4408	shll2	r4
 0x0001BD3C: 0x344C	add	r4,r4
 0x0001BD3E: 0x2842	mov.l	r4,@r8
 0x0001BD40: 0xA03E	bra	0x0001BDC0
+; return value: 0x02
 0x0001BD42: 0xE002	mov	#0x02,r0
+; check if first read byte >= 0x80?
 0x0001BD44: 0x9143	mov.w	@(0x08A,pc),r1	; 0x0001BDCE (0x0080)
 0x0001BD46: 0x2149	and	r4,r1
 0x0001BD48: 0x2118	tst	r1,r1
+; branch if >= 0x80, and shift byte to high position
 0x0001BD4A: 0x8F04	bf/s	0x0001BD56
 0x0001BD4C: 0x4418	shll8	r4
+; if byte is < 0x80, it's assumed to be a space character (0x20), which for
+; some reason are stored as 1-byte sequences instead of 2 bytes like
+; everything else
+; this code expands them to the proper 2-byte sequence, 0x2020
 0x0001BD4E: 0xE020	mov	#0x20,r0
 0x0001BD50: 0x240B	or	r0,r4
 0x0001BD52: 0xA003	bra	0x0001BD5C
+; return value: 0x02 (1 byte read)
 0x0001BD54: 0xE902	mov	#0x02,r9
+; get next character
 0x0001BD56: 0x6150	mov.b	@r5,r1
 0x0001BD58: 0x611C	extu.b	r1,r1
 0x0001BD5A: 0x241B	or	r1,r4
@@ -492,44 +616,62 @@ OK:
 0x0001BD72: 0x6703	mov	r0,r7
 0x0001BD74: 0x372C	add	r2,r7
 0x0001BD76: 0xE300	mov	#0x00,r3
+; the above code uses some crazy backwards method of deriving a pointer
+; to 002F2000, the location of KANJI.FNT, and adding D0A8 to it to get
+; the location of the footer
+; read the number of footer entries
 0x0001BD78: 0x012D	mov.w	@(r0,r2),r1
 0x0001BD7A: 0x611D	extu.w	r1,r1
+; subtract 2
 0x0001BD7C: 0x71FE	add	#0xFE,r1
+; branch if all entries checked
 0x0001BD7E: 0x3313	cmp/ge	r1,r3
 0x0001BD80: 0x8D0C	bt/s	0x0001BD9C
 0x0001BD82: 0x6673	mov	r7,r6
+; get the next entry (r1)
 0x0001BD84: 0x6171	mov.w	@r7,r1
 0x0001BD86: 0x621D	extu.w	r1,r2
 0x0001BD88: 0x72FE	add	#0xFE,r2
 0x0001BD8A: 0x7602	add	#0x02,r6
 0x0001BD8C: 0x6161	mov.w	@r6,r1
 0x0001BD8E: 0x611D	extu.w	r1,r1
+; branch if target character is less than the entry
 0x0001BD90: 0x3412	cmp/hs	r1,r4
 0x0001BD92: 0x8B03	bf	0x0001BD9C
+; increment entry number
 0x0001BD94: 0x7301	add	#0x01,r3
+; branch if we haven't reached the last entry
 0x0001BD96: 0x3323	cmp/ge	r2,r3
 0x0001BD98: 0x8FF8	bf/s	0x0001BD8C
 0x0001BD9A: 0x7602	add	#0x02,r6
-; matching LUT found? -- get graphic pointer?
+; matching entry found, or failed
+; move entry preceding this one to r7
 0x0001BD9C: 0x6771	mov.w	@r7,r7
 0x0001BD9E: 0x677D	extu.w	r7,r7
+; multiply by entry index number
 0x0001BDA0: 0x0377	mul.l	r7,r3
+; get result
 0x0001BDA2: 0x061A	sts	macl,r6
 0x0001BDA4: 0x6163	mov	r6,r1
+; get highest bit as lowest
 0x0001BDA6: 0x4104	rotl	r1
 0x0001BDA8: 0x0129	movt	r1
+; add to result
 0x0001BDAA: 0x361C	add	r1,r6
+; divide by 2
 0x0001BDAC: 0x4621	shar	r6
 0x0001BDAE: 0xD109	mov.l	@(0x028,pc),r1	; 0x0001BDD4 (0x06086248) 
 0x0001BDB0: 0x051A	sts	macl,r5
 0x0001BDB2: 0x355C	add	r5,r5
+; look up load address of KANJI.FNT from 06086248 (6e248),
+; and add result of above operations to it
 0x0001BDB4: 0x6112	mov.l	@r1,r1
 0x0001BDB6: 0xD008	mov.l	@(0x024,pc),r0	; 0x0001BDD8 (0x06032120) 
-; call 1a120
+; call 1a120 (get compressed character graphic address)
 ; nop = garbage is drawn
 0x0001BDB8: 0x400B	jsr	@r0
 0x0001BDBA: 0x351C	add	r1,r5
-; get return value -- put on stack? (ex. 060ffb6c)
+; save address (ex. 060ffb6c)
 0x0001BDBC: 0x2802	mov.l	r0,@r8
 0x0001BDBE: 0x6093	mov	r9,r0
 0x0001BDC0: 0x6FE3	mov	r14,r15
@@ -539,39 +681,51 @@ OK:
 0x0001BDC8: 0x000B	rts
 0x0001BDCA: 0x68F6	mov.l	@r15+,r8
 
-; character lookup??
+; does a linear search of KANJI.FNT for a character?
+;
+; r4 = target character
+; r5 = base address (in KANJI.FNT) at which to start searching??
+;
 ; returns something in r0
 0x0001A120: 0x4F12	sts.l	macl,@-r15
 0x0001A122: 0x6153	mov	r5,r1
 0x0001A124: 0x461A	lds	r6,macl
 0x0001A126: 0x255A	xor	r5,r5
+; get address of KANJI.FNT (002f2000)
 0x0001A128: 0xD009	mov.l	@(0x028,pc),r0	; 0x0001A150 (0x06086248) 
 0x0001A12A: 0xD60A	mov.l	@(0x02C,pc),r6	; 0x0001A154 (0x0000FFFF) 
 0x0001A12C: 0x6302	mov.l	@r0,r3
-; 002f2000 = kanji table?
+; get number of index entries
 0x0001A12E: 0x6231	mov.w	@r3,r2
 0x0001A130: 0x6063	mov	r6,r0
+; get previous entry and next as a long
 0x0001A132: 0x6316	mov.l	@r1+,r3
+; mask off low word
 0x0001A134: 0x2039	and	r3,r0
+; branch if this is the target character
 0x0001A136: 0x3040	cmp/eq	r4,r0
 0x0001A138: 0x8D0E	bt/s	0x0001A158
+; check high word
 0x0001A13A: 0x4329	shlr16	r3
 0x0001A13C: 0x3340	cmp/eq	r4,r3
+; branch if target
 0x0001A13E: 0x8D14	bt/s	0x0001A16A
 0x0001A140: 0x7501	add	#0x01,r5
+; loop until max number of entries checked
 0x0001A142: 0x3570	cmp/eq	r7,r5
-; loop until ??? found??
 0x0001A144: 0x8FF5	bf/s	0x0001A132
 0x0001A146: 0x6063	mov	r6,r0
-; not found??
+; character not found: return address of first character in font
 0x0001A148: 0x6023	mov	r2,r0
 0x0001A14A: 0x000B	rts
 0x0001A14C: 0x4F16	lds.l	@r15+,macl
+
 0x0001A14E: 0x0009	nop
 0x0001A150: 0x0608	.long	0x06086248	; 0x0001A128
 0x0001A152: 0x6248	
 0x0001A154: 0x0000	.long	0x0000FFFF	; 0x0001A128
 0x0001A156: 0xFFFF	
+; character found (low position)
 0x0001A158: 0x011A	sts	macl,r1
 0x0001A15A: 0x351C	add	r1,r5
 0x0001A15C: 0x4508	shll2	r5
@@ -581,6 +735,7 @@ OK:
 0x0001A164: 0x4F16	lds.l	@r15+,macl
 0x0001A166: 0x000B	rts
 0x0001A168: 0x6053	mov	r5,r0
+; character found (high position)
 0x0001A16A: 0x75FF	add	#0xFF,r5
 0x0001A16C: 0x011A	sts	macl,r1
 0x0001A16E: 0x351C	add	r1,r5
@@ -684,3 +839,67 @@ OK:
 0604e840: copy a string? (ellie's name on main menu)
   - called at 0604cb62
 
+ff986 = "@"
+
+セニア = 835A　836A　8341
+ｾﾆｱ = BE　C6　B1
+
+main menu stuff(?) starts around 1362c (宝箱の鍵)
+  - character names immediately precede this
+  
+0602c330 (14330): システム
+  - 0604d198: first read -- part of strlen? copies 1 char at a time
+    (to 060fec74)
+    - 0604d180: routine -- check for terminator? (r5 = getpos)
+      - called at 0604ab5e (calculates string length?)
+  - 0604e878: copied to stack (060fed78)
+    - 0604e840 (36840): copy routine?
+      - called at 0604cb62
+  - both of the above are called within 0604a9c8, called at 0604a950
+    - in 0604a940, called at (eg.?) 0604a5b6
+      - 0604a940: called once per string to print?
+      - in 0604a590, called at 0601fbc0
+        - 0601fbc0: executed once per fullheight string to print? 
+          - 0604a590: r5 = source string pointer?
+0601fb90: prints fullheight string?
+  - r8 = stack frame?
+  - r9 = source address?
+  - called from various sources (060314b8, 060314ca, 06031364, 060313be,
+    06031270)
+    - 0602c576: call 06031484, drawing システム label?
+      - at this point, r4 = pointer to システム
+
+060551C0 (3d1c0) = base of string pointer table for "system" text?
+  - 060551C8 (3d1c8) = pointer to システム text
+  
+060300f0 (180f0): ステレオ
+  - pointer: 181ec
+060302bc (182bc): メッセー
+  - pointer: 183f8
+060304d4 (184d4): something カーソル
+  - pointer: 185dc
+  
+"2"
+  - 4a1c9: pointer to フレイ
+  - 0606324e (4b24e): ひんし (8x8 hiragana encoding)
+    - ?
+  
+***STRING POINTER TABLES ("1") -- overworld***
+3a9a0-3a9bc -- character names (halfwidth)?
+  - 0x7 entries?
+3ccb0-3cccc -- character names (fullwidth)?
+  - 0x7 entries?
+3cd04-3ce7c -- magic??
+  - 0x5e entries?
+3cf8c-3d1d8? = string pointer table
+  - 0x93 entries?
+also:
+  3a494-3dcaf = some filename pointers (.FLD)
+  
+  
+***STRING POINTER TABLES ("2") -- battle***
+  ...
+  
+  
+
+* physical screen space for 8x8 stuff -- 
