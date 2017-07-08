@@ -101,6 +101,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < filename.size(); i++) {
       if (filename[i] == '\\') filename[i] = '/';
     }
+    std::cout << "Unpacking " << filename << "\n";
     
     createDirectoryForFile(filename);
     
