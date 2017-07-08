@@ -68,6 +68,40 @@ in "1":
     modify 1921A: 81 97 25 32 64 00 -> 04 25 32 64 00 00
     - this updates the printstring for character levels to accommodate the
       change above ("%s＠%2d" -> "%s@%2d\x00")
+      
+***BATTLE 8-BIT ENCODING HACK***
+in "2":
+  NOP these:
+    ; check if first read byte >= 0x80?
+    ;0x0001BD44: 0x9143	mov.w	@(0x08A,pc),r1	; 0x0001BDCE (0x0080)
+    ;0x0001BD46: 0x2149	and	r4,r1
+    ;0x0001BD48: 0x2118	tst	r1,r1
+    ; branch if >= 0x80, and shift byte to high position
+    ;0x0001BD4A: 0x8F04	bf/s	0x0001BD56
+    ;0x0001BD4C: 0x4418	shll8	r4
+    ; if byte is < 0x80, it's assumed to be a space character (0x20), which for
+    ; some reason are stored as 1-byte sequences instead of 2 bytes like
+    ; everything else
+    ; this code expands them to the proper 2-byte sequence, 0x2020
+    ;0x0001BD4E: 0xE020	mov	#0x20,r0
+    ;0x0001BD50: 0x240B	or	r0,r4
+    ;0x0001BD52: 0xA003	bra	0x0001BD5C
+    ; return value: 0x02
+    ;0x0001BD54: 0xE902	mov	#0x02,r9
+    ; get next character
+    ;0x0001BD56: 0x6150	mov.b	@r5,r1
+    ;0x0001BD58: 0x611C	extu.b	r1,r1
+    ;0x0001BD5A: 0x241B	or	r1,r4
+  and change these:
+    1bf88: 71 02 -> 71 01
+      - advance 1 byte instead of 2
+    1c026: 78 02 -> 78 01
+      - advance 1 byte instead of 2??
+        not sure if this is necessary
+  and NOP this:
+    0x0001B4D6: 0x4B01	shlr	r11
+      - doubles size of the buffers used to decompress font characters;
+        without this, long strings can overflow and crash the game
 
     
 ***GENERAL***
@@ -363,40 +397,6 @@ print struct:
 
 5f594
 5f5f8
-      
-***BATTLE 8-BIT ENCODING HACK***
-in "2":
-  NOP these:
-    ; check if first read byte >= 0x80?
-    ;0x0001BD44: 0x9143	mov.w	@(0x08A,pc),r1	; 0x0001BDCE (0x0080)
-    ;0x0001BD46: 0x2149	and	r4,r1
-    ;0x0001BD48: 0x2118	tst	r1,r1
-    ; branch if >= 0x80, and shift byte to high position
-    ;0x0001BD4A: 0x8F04	bf/s	0x0001BD56
-    ;0x0001BD4C: 0x4418	shll8	r4
-    ; if byte is < 0x80, it's assumed to be a space character (0x20), which for
-    ; some reason are stored as 1-byte sequences instead of 2 bytes like
-    ; everything else
-    ; this code expands them to the proper 2-byte sequence, 0x2020
-    ;0x0001BD4E: 0xE020	mov	#0x20,r0
-    ;0x0001BD50: 0x240B	or	r0,r4
-    ;0x0001BD52: 0xA003	bra	0x0001BD5C
-    ; return value: 0x02
-    ;0x0001BD54: 0xE902	mov	#0x02,r9
-    ; get next character
-    ;0x0001BD56: 0x6150	mov.b	@r5,r1
-    ;0x0001BD58: 0x611C	extu.b	r1,r1
-    ;0x0001BD5A: 0x241B	or	r1,r4
-  and change these:
-    1bf88: 71 02 -> 71 01
-      - advance 1 byte instead of 2
-    1c026: 78 02 -> 78 01
-      - advance 1 byte instead of 2??
-        not sure if this is necessary
-  and NOP this:
-    0x0001B4D6: 0x4B01	shlr	r11
-      - doubles size of the buffers used to decompress font characters;
-        without this, long strings can overflow and crash the game
 
 ; prep string for printing?
 ; looks up stuff from tables and puts on stack?
