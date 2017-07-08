@@ -102,6 +102,13 @@ in "2":
     0x0001B4D6: 0x4B01	shlr	r11
       - doubles size of the buffers used to decompress font characters;
         without this, long strings can overflow and crash the game
+      - this may not be necessary depending on how long the translated
+        strings are
+      - also, may have problems with stuff getting incorrectly overwritten,
+        but ???
+  todo: the weird optimization thing at the end of KANJI.FNT screws up
+    printing the low-index characters that will probably be used -- do
+    something about it
 
     
 ***GENERAL***
@@ -377,7 +384,7 @@ example decompression buffer: 060d73d4
     
 print struct:
   c0 = decompression buffer pointer???
-  d4 = ? (334b6)
+  d4 = width in characters??? (334b6)
   dc = spacing (negative)
   e4 = spacing (positive)
   e8 = number of decompression chars????
@@ -397,6 +404,40 @@ print struct:
 
 5f594
 5f5f8
+
+1b4b6: 02 2E -> E2 0B
+  - this actually works!!
+  - force all generated text textures to be 11 characters wide
+  
+060332FC (1b2fc) = generate battle string (full-width?)
+the following specify widths for various battle strings:
+*******************************************************************************
+  0x000273AE: 0xEB02	mov	#0x02,r11
+  0x000274C0: 0xE704	mov	#0x04,r7
+  0x000274F0: 0xE705	mov	#0x05,r7
+  0x00027566: 0x6723	mov	r2,r7
+    - derived from the result of an earlier function; something dynamically
+      generated, like enemy names?
+  0x000275C4: 0xE70F	mov	#0x0F,r7
+  0x00027610: 0xE70F	mov	#0x0F,r7
+
+  0x000261DA: 0xE712	mov	#0x12,r7
+  0x0002620E: 0xE712	mov	#0x12,r7
+  0x00026278: 0xE70B	mov	#0x0B,r7
+  0x000262C2: 0xE726	mov	#0x26,r7
+  0x0002632E: 0xE712	mov	#0x12,r7
+  0x00026360: 0xE712	mov	#0x12,r7
+  0x000263B0: 0xE708	mov	#0x08,r7
+  0x000263DE: 0xE708	mov	#0x08,r7
+  0x00026418: 0x67C3	mov	r12,r7
+    - from 0x0002639E: 0xEC02	mov	#0x02,r12
+  
+  0x00028586: 0xE704	mov	#0x04,r7
+  
+  0x00025EB8: 0xE712	mov	#0x12,r7
+  0x00025EEA: 0xE712	mov	#0x12,r7
+  0x00025F1C: 0xE712	mov	#0x12,r7
+*******************************************************************************
 
 ; prep string for printing?
 ; looks up stuff from tables and puts on stack?
@@ -599,9 +640,8 @@ print struct:
 0x0001BD56: 0x6150	mov.b	@r5,r1
 0x0001BD58: 0x611C	extu.b	r1,r1
 0x0001BD5A: 0x241B	or	r1,r4
-; at this point, r4 = raw id of char to print?
-; the next part of the routine is looking up the position of the
-; graphic for this id?
+; at this point, r4 = raw id of char to print
+; now look up its graphic in KANJI.FNT
 0x0001BD5C: 0xD11D	mov.l	@(0x078,pc),r1	; 0x0001BDD4 (0x06086248) 
 0x0001BD5E: 0x6212	mov.l	@r1,r2
 0x0001BD60: 0x6121	mov.w	@r2,r1
@@ -644,6 +684,10 @@ print struct:
 0x0001BD96: 0x3323	cmp/ge	r2,r3
 0x0001BD98: 0x8FF8	bf/s	0x0001BD8C
 0x0001BD9A: 0x7602	add	#0x02,r6
+;     0x0001BD9C: 0xD70D  mov.l @(0x038,pc),r7	; 0x0001BDD4 (0x06086248) 
+;     0x0001BD9E: 0x6772	mov.l	@r7,r7
+;     0x0001BDA0: 0x6771	mov.w	@r7,r7
+;     ;0x0001BDA2: 0x677D	extu.w	r7,r7
 ; matching entry found, or failed
 ; move entry preceding this one to r7
 0x0001BD9C: 0x6771	mov.w	@r7,r7
@@ -670,6 +714,7 @@ print struct:
 ; call 1a120 (get compressed character graphic address)
 ; nop = garbage is drawn
 0x0001BDB8: 0x400B	jsr	@r0
+;    0x0001BDBA:  0x6513   mov r1, r5
 0x0001BDBA: 0x351C	add	r1,r5
 ; save address (ex. 060ffb6c)
 0x0001BDBC: 0x2802	mov.l	r0,@r8
@@ -685,6 +730,8 @@ print struct:
 ;
 ; r4 = target character
 ; r5 = base address (in KANJI.FNT) at which to start searching??
+; r6 = ?
+; r7 = max number of chars to check?
 ;
 ; returns something in r0
 0x0001A120: 0x4F12	sts.l	macl,@-r15
