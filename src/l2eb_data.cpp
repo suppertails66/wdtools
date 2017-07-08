@@ -5,7 +5,7 @@
 #include "util/TStringConversion.h"
 #include "util/TSerialize.h"
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
   #include <sys/stat.h>
 #elif _WIN32
   #include <windows.h>
@@ -42,7 +42,7 @@ void createDirectory(string name) {
     // will not create subdirectories
     createDirectory(getDirectory(name));
     
-    #ifdef __linux__
+    #if defined(__linux__) || defined(__APPLE__)
       mkdir(name.c_str(), S_IRWXU|S_IRWXG|S_IRWXO);
     #elif _WIN32
 	    CreateDirectoryA(name.c_str(), NULL);
