@@ -116,34 +116,31 @@ in "2":
     ...
     ; ensure the "base index address" is 0x002f2000
     0x0001BDBA: 0x6513 -> 0x351C  mov r1, r5
-  * and NOP this:
-    0x0001B4D6: 0x4B01	shlr	r11
-      - doubles size of the buffers used to decompress font characters;
-        without this, long strings can overflow and crash the game
-      - !!! this shouldn't be necessary once the translated strings are in
-        and the texture widths have been updated appropriately; the game
-        computes the size of the decompression buffer based on the size of
-        the generated texture
-      - this may not be necessary depending on how long the translated
-        strings are
-      - also, may have problems with stuff getting incorrectly overwritten,
-        but ???
-  todo: increase the widths of the generated textures so that there's room for
-    the replacements. relevant constants are listed below
-  
+  adjust the widths of the text textures.
+  this (a) allows longer strings to be displayed, and (b) prevents the game
+    from crashing by overflowing its decompression buffers when long strings
+    are displayed
+    - for the latter, an increase of 2 characters is usually enough
+    - 
 060332FC (1b2fc) = generate battle string (full-width?)
 the following specify widths for various battle strings:
 *******************************************************************************
-  0x00025EB8: 0xE712	mov	#0x12,r7
-  0x00025EEA: 0xE712	mov	#0x12,r7
-  0x00025F1C: 0xE712	mov	#0x12,r7
+  magic descriptions, maybe other stuff
+  increase these to at least 0x16
+    0x00025EB8: 0xE712	mov	#0x12,r7
+    0x00025EEA: 0xE712	mov	#0x12,r7
+    0x00025F1C: 0xE712	mov	#0x12,r7
   
-  0x000273AE: 0xEB02	mov	#0x02,r11
-  0x000274C0: 0xE704	mov	#0x04,r7
+  0x000273C4: 0x67B3	mov	r11,r7     ; 2-character labels ("fight", etc.)?
+    - this is tied to something else -- change this instead:
+      0x000273C4: 0x67B3 -> 0xE704	mov	#04,r7
+  0x000273F8: 0x67B3	mov	r11,r7      ; 2-character labels ("escape", etc.)?
+      0x000273F8: 0x67B3 -> 0xE704	mov	#04,r7
+  0x000274C0: 0xE704	mov	#0x04,r7    ; ?
   0x000274F0: 0xE705	mov	#0x05,r7
   0x00027566: 0x6723	mov	r2,r7
     - derived from the result of an earlier function; something dynamically
-      generated, like enemy names?
+      generated, like magic descriptions?
   0x000275C4: 0xE70F	mov	#0x0F,r7
   0x00027610: 0xE70F	mov	#0x0F,r7
 
@@ -156,11 +153,29 @@ the following specify widths for various battle strings:
   0x000263B0: 0xE708	mov	#0x08,r7
   0x000263DE: 0xE708	mov	#0x08,r7
   0x00026418: 0x67C3	mov	r12,r7
+      0x00026418: 0x67C3 -> 0xE704	mov	#04,r7
     - from 0x0002639E: 0xEC02	mov	#0x02,r12
   
   0x00028586: 0xE704	mov	#0x04,r7
 *******************************************************************************
+  ***** old, don't use this -- causes problems
+    and NOP this:
+      0x0001B4D6: 0x4B01	shlr	r11
+        - doubles size of the buffers used to decompress font characters;
+          without this, long strings can overflow and crash the game
+        - !!! this shouldn't be necessary once the translated strings are in
+          and the texture widths have been updated appropriately; the game
+          computes the size of the decompression buffer based on the size of
+          the generated texture
+        - this may not be necessary depending on how long the translated
+          strings are
+        - also, may have problems with stuff getting incorrectly overwritten,
+          but ???
 
+06033d04 -- print letter
+
+060d843c
+060e51c4
     
 ***GENERAL***
 
@@ -460,6 +475,9 @@ print struct:
 1b4b6: 02 2E -> E2 0B
   - this actually works!!
   - force all generated text textures to be 11 characters wide
+  
+4601c|単体・炎の攻撃
+  - read at 0603402e (1c02e)
 
 ; prep string for printing?
 ; looks up stuff from tables and puts on stack?
