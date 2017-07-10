@@ -56,7 +56,8 @@ int main(int argc, char* argv[]) {
       TranslationEntry& entry = entries[i];
       
       // place at original location if possible
-      if (entry.translatedText.size() <= entry.originalText.size()) {
+//      cerr << entry.originalSize << endl;
+      if (entry.translatedText.size() <= entry.originalSize) {
         strcpy(fileBuffer + entry.sourceFileOffset,
                entry.translatedText.c_str());
       }

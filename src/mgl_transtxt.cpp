@@ -31,9 +31,31 @@ std::string nextToken(std::istream& ifs) {
 }
 
 void escapeString(const std::string& src, std::string& dst) {
-  for (unsigned int i = 0; i < src.size(); i++) {
-    unsigned char next = src[i];
-    if ((next < 0x0A) || (next >= 0xF0)) {
+  // is this a half-width string?
+  if (src.size() && 
+      (((src[0] >= 161) && (src[0] <= 223))
+        || (src[0] == 1)
+        || (src[0] == 2))) {
+    for (unsigned int i = 0; i < src.size(); i++) {
+      unsigned char next = src[i];
+      // katakana mode
+      if ((next == 1)) {
+        dst += "{k}";
+      }
+      // hiragana mode
+      else if ((next == 2)) {
+        dst += "{h}";
+      }
+      else {
+        dst += next;
+      }
+    }
+  }
+  else {
+    dst = src;
+  }
+  
+/*    if ((next < 0x0A) || (next >= 0xF0)) {
       char buffer[2];
       sprintf(buffer, "%02x", next);
       dst += "\\x";
@@ -43,7 +65,7 @@ void escapeString(const std::string& src, std::string& dst) {
     else {
       dst += next;
     }
-  }
+  } */
 }
 
 void skipWhitespace(std::istream& ifs) {
@@ -129,6 +151,12 @@ void TranslationEntry::save(std::ostream& ofs) {
   ofs << endl;
   ofs << endl;
   
+  ofs << "### size" << endl;
+//  ofs << originalSize << endl;
+  if (originalSize == originalText.size()) ofs << dec << -1 << endl;
+  else ofs << dec << originalSize << endl;
+  ofs << endl;
+  
   ofs << "### original" << endl;
   ofs << "<" << endl;
   ofs << originalText << endl;
@@ -162,8 +190,13 @@ void TranslationEntry::load(std::istream& ifs) {
     pointers.push_back(p);
   }
   
+  advance(ifs);
+  ifs >> dec >> originalSize;
+  
   readStringLiteral(ifs, originalText);
   readStringLiteral(ifs, translatedText);
+  
+  if ((signed int)originalSize == -1) originalSize = originalText.size();
 }
   
 void TranslationFile::load(std::istream& ifs) {

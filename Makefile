@@ -147,14 +147,17 @@ l2eb_stats: blackt $(OBJ)
 cf2_stats: blackt $(OBJ)
 	$(CXX) $(OBJ) src/cf2_stats.cpp -o cf2_stats $(CXXFLAGS)
 	
+mgl_transtxt: blackt $(OBJ)
+	$(CXX) -c $(OBJ) src/mgl_transtxt.cpp -o mgl_transtxt.o $(CXXFLAGS)
+	
 sjis_srch: blackt $(OBJ)
 	$(CXX) $(OBJ) src/sjis_srch.cpp -o sjis_srch $(CXXFLAGS)
 	
-mgl_strtab_extr: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_transtxt.cpp src/mgl_strtab_extr.cpp -o mgl_strtab_extr $(CXXFLAGS)
+mgl_strtab_extr: blackt $(OBJ) mgl_transtxt
+	$(CXX) $(OBJ) mgl_transtxt.o src/mgl_strtab_extr.cpp -o mgl_strtab_extr $(CXXFLAGS)
 	
-mgl_str_insr: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_transtxt.cpp src/mgl_str_insr.cpp -o mgl_str_insr $(CXXFLAGS)
+mgl_str_insr: blackt $(OBJ) mgl_transtxt
+	$(CXX) $(OBJ) mgl_transtxt.o src/mgl_str_insr.cpp -o mgl_str_insr $(CXXFLAGS)
 
 -include $(DEP)
 

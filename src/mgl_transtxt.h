@@ -20,6 +20,7 @@ struct TranslationEntry {
   unsigned int sourceFileOffset;
   
   std::string originalText;
+  unsigned int originalSize;
   std::string translatedText;
   
   std::vector<unsigned int> pointers;

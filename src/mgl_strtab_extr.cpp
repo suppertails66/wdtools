@@ -112,11 +112,13 @@ int main(int argc, char* argv[]) {
       readMglString(srcifs, str);
       string escapedStr;
       escapeString(str, escapedStr);
+//      string escapedStr = str;
       
       TranslationEntry e;
       e.sourceFile = filename;
       e.sourceFileOffset = realpos;
       e.originalText = escapedStr;
+      e.originalSize = str.size();
       e.translatedText = "X";
       e.pointers.push_back(tableaddr + (i * 4));
       e.save(cout);
