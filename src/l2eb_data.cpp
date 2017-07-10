@@ -5,7 +5,7 @@
 #include "util/TStringConversion.h"
 #include "util/TSerialize.h"
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
   #include <sys/stat.h>
 #elif _WIN32
   #include <windows.h>
@@ -42,7 +42,7 @@ void createDirectory(string name) {
     // will not create subdirectories
     createDirectory(getDirectory(name));
     
-    #ifdef __linux__
+    #if defined(__linux__) || defined(__APPLE__)
       mkdir(name.c_str(), S_IRWXU|S_IRWXG|S_IRWXO);
     #elif _WIN32
 	    CreateDirectoryA(name.c_str(), NULL);
@@ -55,7 +55,18 @@ void createDirectoryForFile(string name) {
 }
 
 int main(int argc, char* argv[]) {
-  if (argc < 4) return 0;
+  if (argc < 2) {
+    printf("No IDX specified!\n");
+    return 1;
+  }
+  if (argc < 3) {
+    printf("No UPD specified!\n");
+    return 1;
+  }
+  if (argc < 4) {
+    printf("No PAK specified!\n");
+    return 1;
+  }
   
   ifstream idx(argv[1], ios_base::binary);
   ifstream upd(argv[2], ios_base::binary);
@@ -90,6 +101,7 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < filename.size(); i++) {
       if (filename[i] == '\\') filename[i] = '/';
     }
+    std::cout << "Unpacking " << filename << "\n";
     
     createDirectoryForFile(filename);
     
