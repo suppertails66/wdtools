@@ -12,14 +12,16 @@ Here's an overview of the tools:
 chngsrch: Searches two files for bytes which have increased by a specified
           amount. Intended as a poor-man's cheat search for Mednafen
           savestates, since its actual cheat search is broken.
-gearbolt_cmp: Compressor for compressed EXE in some PlayStation games.
+gearbolt_cmp: Compressor for compressed EXE in some PlayStation games developed
+                by Alfa System.
                 This is used in Elemental Gearbolt, Lunar: Silver Star Story,
-                and presumably other games.
+                and probably other games.
 gearbolt_decmp: Decompressor for compressed EXE in some PlayStation games.
 hucdism: Extremely basic disassembler for the HuC6280.
 pngcompare: Pixel-by-pixel PNG comparison utility.
 relsearch: Simple relative pattern searcher.
 sampcm: Converts raw Sega CD sign-and-magnitude PCM to signed.
+sjis_srch: Searches a file for specifically formatted Shift_JIS strings.
 tablerip: Extracts tables of C-style strings.
 
 *** ALUNDRA ***
@@ -74,6 +76,10 @@ l2eb_data: Extractor for the DATA archive.
 l2eb_grp: Primitive and unfinished graphics extractor.
 l2eb_stats: Compares enemy stat tables.
 l2eb_txt: Extracts text from US version of the game.
+
+*** MAHOU GAKUEN LUNAR! ***
+mgl_str_insr: String insertion utility.
+mgl_strtab_extr: Extracts string pointer tables. See mgl_strtab.txt.
 
 *** MAGIC KNIGHT RAYEARTH ***
 mkr_enemies: Reads and compares enemy stat structs for relevant changes.

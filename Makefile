@@ -20,7 +20,7 @@ PREFIX := /usr/local
 BINDIR := $(PREFIX)/bin
 INSTALL := install
 
-tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt l2eb_data l2eb_txt l2eb_grp l2eb_stats cf2_stats
+tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt l2eb_data l2eb_txt l2eb_grp l2eb_stats cf2_stats sjis_srch mgl_strtab_extr mgl_str_insr
 
 all: blackt copycat $(OBJ) $(tools)
 	
@@ -146,6 +146,15 @@ l2eb_stats: blackt $(OBJ)
 	
 cf2_stats: blackt $(OBJ)
 	$(CXX) $(OBJ) src/cf2_stats.cpp -o cf2_stats $(CXXFLAGS)
+	
+sjis_srch: blackt $(OBJ)
+	$(CXX) $(OBJ) src/sjis_srch.cpp -o sjis_srch $(CXXFLAGS)
+	
+mgl_strtab_extr: blackt $(OBJ)
+	$(CXX) $(OBJ) src/mgl_transtxt.cpp src/mgl_strtab_extr.cpp -o mgl_strtab_extr $(CXXFLAGS)
+	
+mgl_str_insr: blackt $(OBJ)
+	$(CXX) $(OBJ) src/mgl_transtxt.cpp src/mgl_str_insr.cpp -o mgl_str_insr $(CXXFLAGS)
 
 -include $(DEP)
 
