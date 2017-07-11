@@ -171,6 +171,14 @@ the following specify widths for various battle strings:
           strings are
         - also, may have problems with stuff getting incorrectly overwritten,
           but ???
+          
+*** MISC BATTLE HACKS ***
+  fix hardcoded size of が separating stat name from number in level-up stat
+    increase messages (original format: {stat}が{amount}あがった
+    2:212e9 is the x-offset from {stat} -- increase it to accomodate "increased
+    by" or whatever
+    ; x-offset of numbers from "ga"
+    0x000212E8: 0x7D3D	add	#0x3D,r13
 
 06033d04 -- print letter
 
@@ -478,6 +486,15 @@ print struct:
   
 4601c|単体・炎の攻撃
   - read at 0603402e (1c02e)
+  
+level up stat printing
+  06038174 (20174)
+    - called at 060392f4 (212f4), in 06039258 (21258)
+      - called every frame, but this logic isn't always executed?
+        - critical juncture is 06039270
+      - called at 06033126, in 060330fc (every frame?)
+        - called at 06039b2a, in 06039b1e
+          - called at 0603a04e, in 0603a030?
 
 ; prep string for printing?
 ; looks up stuff from tables and puts on stack?
@@ -975,6 +992,14 @@ main menu stuff(?) starts around 1362c (宝箱の鍵)
   - 4a1c9: pointer to フレイ
   - 0606324e (4b24e): ひんし (8x8 hiragana encoding)
     - ?
+  - 4b1f2: こんらん 
+  - 4b1ff: ゆうわく 
+  - 4b20c:  と゛く  
+  - 4b219:  まひ  
+  - 4b227: せきか 
+  - 4b234: きせ゛つ 
+  - 4b241: きせ゛つ 
+  - 4b24e: ひんし 
   
 ***STRING POINTER TABLES ("1") -- overworld***
 3a9a0-3a9bc -- character names (halfwidth)?
@@ -995,3 +1020,26 @@ also:
   
 
 * physical screen space for 8x8 stuff -- 
+
+
+
+
+1:13650 噂xf3れたプレート
+  89 F3 82 EA 82 BD 83 76 83 8C 81 5B 83 67
+  - in-game: 壊れたプレート
+1:140ac 単体・炎の攻撃 (flay description)
+  - pointer: 3cf90
+
+13864
+  01 B6 DE DD BE B7 B5 C4 BC
+    01  ｶﾞﾝｾｷｵﾄｼ
+    - inline hiragana/katakana switching:
+      - 01 switches to hiragana
+      - 02 switches to katakana
+13890: ﾌﾚｲ
+  pointer: 
+  
+2:45d44
+  96 DE FD 9E 97 95 E4 9C 00
+   	か゛んせきおとし
+  - HARDCODED halfwidth hiragana
