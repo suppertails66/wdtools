@@ -2,41 +2,6 @@
   file: 1
   0601ff78 (7F78): 7C 08 -> 7C 04
     - seems to take care of pretty much everything?
-    
-***DIALOGUE HALFWIDTH HACKS***
-  file: 1
-  06028f6c (10f6c): E5 11 -> E5 09
-    - change spacing between characters
-  06028f9e (10f9e): 00 09 -> E5 11
-    - fix interdependency between char spacing and height
-  06028f5c (10f5c): E1 0F -> E1 1E (probably)
-    - modify max characters per line
-
-***BATTLE HALFWIDTH HACKS***
-  file: 2
-  0603DEB2 (25EB2): EB FF -> EB F7
-    - magic descriptions, battle messages?
-  0603e1d4 (261D4): EB FF -> EB F7
-    - enemy names
-  0603e322 (26322): ???
-    - prob a print struct init, but offset is 00 instead of -1,
-      and editing doesn't seem to have any effect
-  0603F3BE (273BE): EC FF -> EC F7
-    - halves width of many static labels ("attack", "defend", etc.)
-    - double "secondary spacing offset"?
-    - why doesn't game like changing other spacing value? recycled init
-      variables?
-  0603f560 (27560): E1 FF -> E1 F7
-    - character names on menu
-    
-***DIALOGUE 8-BIT ENCODING HACK***
-NOP the following in "1":
-  ;0x00010F44: 0x4418	shll8	r4
-  ;0x00010F46: 0x7201	add	#0x01,r2
-  ;0x00010F4C: 0x72FF	add	#0xFF,r2
-  ;0x00010F4E: 0x6120	mov.b	@r2,r1
-  ;0x00010F52: 0x611C	extu.b	r1,r1
-  ;0x00010F54: 0x341C	add	r1,r4
   
 ***MENU 8-BIT ENCODING HACK***
 in "1":
@@ -68,6 +33,38 @@ in "1":
     modify 1921A: 81 97 25 32 64 00 -> 04 25 32 64 00 00
     - this updates the printstring for character levels to accommodate the
       change above ("%s＠%2d" -> "%s@%2d\x00")
+    
+***DIALOGUE HALFWIDTH HACKS***
+  file: 1
+  06028f6c (10f6c): E5 11 -> E5 09
+    - change spacing between characters
+  06028f9e (10f9e): 00 09 -> E5 11
+    - fix interdependency between char spacing and height
+  06028f5c (10f5c): E1 0F -> E1 1E (probably)
+    - modify max characters per line
+    
+***DIALOGUE 8-BIT ENCODING HACK***
+NOP the following in "1":
+  ;0x00010F44: 0x4418	shll8	r4
+  ;0x00010F46: 0x7201	add	#0x01,r2
+  ;0x00010F4C: 0x72FF	add	#0xFF,r2
+  ;0x00010F4E: 0x6120	mov.b	@r2,r1
+  ;0x00010F52: 0x611C	extu.b	r1,r1
+  ;0x00010F54: 0x341C	add	r1,r4
+
+***BATTLE HALFWIDTH HACKS***
+  file: 2
+  0603DEB2 (25EB2): EB FF -> EB F7
+    - magic descriptions, battle messages?
+  0603e1d4 (261D4): EB FF -> EB F7
+    - enemy names
+  0603F3BE (273BE): EC FF -> EC F7
+    - halves width of many static labels ("attack", "defend", etc.)
+    - double "secondary spacing offset"?
+    - why doesn't game like changing other spacing value? recycled init
+      variables?
+  0603f560 (27560): E1 FF -> E1 F7
+    - character names on menu
       
 ***BATTLE 8-BIT ENCODING HACK***
 in "2":
@@ -134,14 +131,26 @@ the following specify widths for various battle strings:
   0x000273C4: 0x67B3	mov	r11,r7     ; 2-character labels ("fight", etc.)?
     - this is tied to something else -- change this instead:
       0x000273C4: 0x67B3 -> 0xE704	mov	#04,r7
+    - init to 060d6770
+      - width = 060d6844
+      - the offending call to 1b2fc is at 27494
+        - r7 from r11
+    - pointer after init: 06099e30
   0x000273F8: 0x67B3	mov	r11,r7      ; 2-character labels ("escape", etc.)?
       0x000273F8: 0x67B3 -> 0xE704	mov	#04,r7
+  0x0002742A: 0x67B3	mov	r11,r7
+      0x0002742A: 0x67B3 -> 0xE708	mov	#08,r7
+  0x0002745C: 0x67B3	mov	r11,r7
+      0x0002745C: 0x67B3 -> 0xE708	mov	#08,r7
+  0x0002748E: 0x67B3	mov	r11,r7
+      0x0002748E: 0x67B3 -> 0xE708	mov	#08,r7
   0x000274C0: 0xE704	mov	#0x04,r7    ; ?
   0x000274F0: 0xE705	mov	#0x05,r7
   0x00027566: 0x6723	mov	r2,r7
     - derived from the result of an earlier function; something dynamically
       generated, like magic descriptions?
   0x000275C4: 0xE70F	mov	#0x0F,r7
+    - spell names on magic selection menu
   0x00027610: 0xE70F	mov	#0x0F,r7
 
   0x000261DA: 0xE712	mov	#0x12,r7
@@ -176,15 +185,31 @@ the following specify widths for various battle strings:
   fix hardcoded size of が separating stat name from number in level-up stat
     increase messages (original format: {stat}が{amount}あがった
     2:212e9 is the x-offset from {stat} -- increase it to accomodate "increased
-    by" or whatever
+    by" or whatever the new message is
     ; x-offset of numbers from "ga"
     0x000212E8: 0x7D3D	add	#0x3D,r13
 
-06033d04 -- print letter
+*** SPELL NAME EXTENSION ***
+  * battle: in addition to the below, see 6x8_magic_battle.asm
+    - the values below switch to a 6x8 layout
+      todo: add a 6x8 font to ASCII.FNT, and set the font offset appropriately
+      in 6x8_magic_battle.asm
+      might not make a difference anyways)
+      - 275C4: e7 0f -> e7 13
+        - expand width of texture
+      - 275BE: e1 ff -> e1 fd
+        - reduce character spacing
+      - 1F562: 71 0a -> 71 0e
+        - increase amount of padding
+      - 1F590: e1 0a -> e1 0e
+        - increase amount of padding
+  * overworld magic use menu: see 6x8_magic_use_overworld.asm
+  * overworld status screen magic list: see 6x8_magic_status.asm
 
-060d843c
-060e51c4
-    
+
+
+
+
 ***GENERAL***
 
   - 002f2000: KANJI.FNT
@@ -194,7 +219,53 @@ the following specify widths for various battle strings:
   - 3: loaded to 002e0000 on overworld?
   - 4: ?
       - 
+
+06033d04 -- print letter
+
+060d843c
+060e51c4
     
+  
+*** escaping ***
+takeaway: freeze 060862fc to 1 to always escape (even if you aren't trying to)
+battle -- 060996e0 = battle state struct?
+  - 0x00: turn number?
+  - 0x14: if nonzero, battle is ending?
+    - set to 01 for instant end
+06099180 = ? struct
+060991a0 = series of structs representing party state??
+B696 = mark party members as escaped?
+EF50 = called when setting party member action?
+  - called at F074?
+060862fc is set to 1 if escape will be successful
+  - apparently determined by call to 0602b800 at 06023612
+  - lock to 1 to always escape (even if it doesn't look like it)
+  - at 060235b2 (b5b2)
+  - at 06023618 (b618)
+
+; this is called whenever a player or enemy decides on a "step"???
+; r4 = actor num?
+0x0000B008: 0x2FE6	mov.l	r14,@-r15
+  
+*** random encounters ***
+takeaway: freeze 0605669c to 0 to disable random encounters
+06056788 = ?
+  - 56750 + 0x38
+  - at 060271cc
+280042
+282872
+060055bc
+0605677a
+0605692a
+060a5200
+060af810
+
+0600750c
+060077e8
+
+1000 = mapnum?
+
+
 
 ***OVERWORLD DIALOGUE***
 
@@ -311,7 +382,25 @@ related:
   
   
 ***BATTLE***
+  - 1B96C: primary text drawing routine
+  print struct format:
+    a0 = pointer to raw string to print
+    c0 = decompression buffer pointer???
+    c8 = flag? wrapping? 8x8?? 06033ce8
+    d4 = width in characters??? (334b6)
+    d8 = ?
+    dc = spacing (negative)
+    e4 = spacing (positive)
+    e8 = number of decompression chars????
+    ec = ? (1B8F4)
+    f0 = x-position?
+    fc = ? (1bb58)
 
+06032540: THISISDUMMYSPACE
+  - creates a 16-byte buffer used to generate spell name/cost strings
+  - copied to ex. 060dae20
+  
+260D4 -- call that generates battle textures?
 
 0603e0d4: call to 0603f512 that sets up most battle text?
   - but magic descriptions and battle messages are already done??
@@ -455,16 +544,6 @@ example decompression buffer: 060d73d4
   - 0x66 bytes?
   - cleared at 06032110 (1a110) (memclr)
     - called at 06033612 (1b612)
-    
-print struct:
-  c0 = decompression buffer pointer???
-  c8 = flag? 8x8?? 06033ce8
-  d4 = width in characters??? (334b6)
-  dc = spacing (negative)
-  e4 = spacing (positive)
-  e8 = number of decompression chars????
-  f0 = x-position?
-  fc = ? (1bb58)
 
 **** 0x0001C026: 0x7802	add	#0x02,r8
   -- should this be 1 instead?
@@ -487,6 +566,11 @@ print struct:
 4601c|単体・炎の攻撃
   - read at 0603402e (1c02e)
   
+
+0603e322 (26322): ???
+  - not a print struct init -- this is part of the routine that
+    prints battle labels
+  
 level up stat printing
   06038174 (20174)
     - called at 060392f4 (212f4), in 06039258 (21258)
@@ -495,6 +579,34 @@ level up stat printing
       - called at 06033126, in 060330fc (every frame?)
         - called at 06039b2a, in 06039b1e
           - called at 0603a04e, in 0603a030?
+          
+2:45d28: ﾌﾚｲ
+  - read at 060551fe (strlen)
+  - automatically padded and combined with MP cost (14 chars total)
+    - prepared string ends up at ex. 060e715c
+      - written at 06034018 (1c018)
+        - from buffer at ex. 06099b98
+        - each party member's spells are loaded to this area in order
+          when their turn arises
+          - written at 06018086 (zeroing)
+          - at 060552d4 (3d2d4)
+            - part of 060552c8 (strcpy), called at 0603754a (1f54a)
+  - 9e210 = table of 0x78 byte structs??
+; call 228dc -- spell name gets read in here
+0x00026E16: 0x400B	jsr	@r0
+
+275c4: width of spell name texture in chars (0f)
+275BE: negative spacing in spell names (ff)
+1F562, 1F590: number of spell name/cost separation chars (0a)
+  - 6x8 = 14 chars
+    - 275C4: e7 0f -> e7 13
+    - 275BE: e1 ff -> e1 fd
+    - 1F562: 71 0a -> 71 0e
+    - 1F590: e1 0a -> e1 0e
+    - assume 6x8 font will start (numbers) at position 0x86 in ASCII.FNT
+  - 5x8 = 17 chars
+    - crank up width of texture:
+      275C4: 0xE70F	mov	#0x0F,r7 -> E7 13 (or so)
 
 ; prep string for printing?
 ; looks up stuff from tables and puts on stack?
@@ -992,14 +1104,55 @@ main menu stuff(?) starts around 1362c (宝箱の鍵)
   - 4a1c9: pointer to フレイ
   - 0606324e (4b24e): ひんし (8x8 hiragana encoding)
     - ?
-  - 4b1f2: こんらん 
-  - 4b1ff: ゆうわく 
-  - 4b20c:  と゛く  
-  - 4b219:  まひ  
-  - 4b227: せきか 
-  - 4b234: きせ゛つ 
-  - 4b241: きせ゛つ 
-  - 4b24e: ひんし 
+    - 4b1f2: こんらん 
+    - 4b1ff: ゆうわく 
+    - 4b20c:  と゛く  
+    - 4b219:  まひ  
+    - 4b227: せきか 
+    - 4b234: きせ゛つ 
+    - 4b241: きせ゛つ 
+    - 4b24e: ひんし 
+  
+1:13890: ﾌﾚｲ
+  - pointer at 06054d50 (3cd50)
+    - read at 0603110e (1910e) for magic use menu
+    - read at 06030aac (18aac) for status screen
+    
+120a4 = core print 8x8?
+
+overworld magic use menu: see test_6x8_magic_use_overworld.asm
+  19118 = call 11de4 to draw name
+    - insert code before here to:
+      - change 11FF6 from 70 04 to 70 03 (reduce spacing to 6x8)
+    - insert code after here to:
+      - change 11FF6 back to 70 04
+    - spell name strings should be preconverted
+    19194 -- address used at 190D2 (0x060A26F0)
+      -- set this to some free space (06041be0 / 29be0)
+    190D4 -- change to
+      43 0b   jsr @r3
+      0x021A  sts	macl,r2
+    191a4 -- address used at 19128
+      -- set to some free space (0604a998 / 32998)
+    change 1912A to:
+      41 0b   jsr @r1
+  
+overworld status screen magic list: see test_6x8_magic_status.asm
+  18A8A: E5 02 -> E5 10
+    - position of first column
+  18AA8: E5 5E -> E5 6C
+    - position of second column
+  ; call 11de4 to draw name
+  0x00018AB8: 0x4A0B	jsr	@r10
+    - insert code before/after to change
+      11FF6 from 70 04 to 70 03 and back
+
+19134 = done drawing everything
+  - insert code to change 06029ff6 (11FF6) from 70 04 to 70 03
+11FF6 = advance 8x8 character spacing
+  - 70 04
+  - add flag and check here to see if spacing should be reduced to 3
+  - actually, better yet, just use self-modifying code
   
 ***STRING POINTER TABLES ("1") -- overworld***
 3a9a0-3a9bc -- character names (halfwidth)?
