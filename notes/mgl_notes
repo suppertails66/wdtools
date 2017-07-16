@@ -237,8 +237,14 @@ battle -- 060996e0 = battle state struct?
 B696 = mark party members as escaped?
 EF50 = called when setting party member action?
   - called at F074?
+0608c900 = number of living/active party members?
 060862fc is set to 1 if escape will be successful
-  - apparently determined by call to 0602b800 at 06023612
+  - apparently determined by call to 0602b800 (13800) at 06023612 (B612)
+    - 13698: decide escape probabilities
+      - default: 35%
+      - if at least one party member is dead, 70%
+      - if at least half the party is dead, 80%
+      - if only one party member is alive, 90%
   - lock to 1 to always escape (even if it doesn't look like it)
   - at 060235b2 (b5b2)
   - at 06023618 (b618)
@@ -266,6 +272,44 @@ takeaway: freeze 0605669c to 0 to disable random encounters
 1000 = mapnum?
 
 
+06056750 = 0x40 byte structs giving each character's stats, etc.?
+06056680 = indicators of present party members?
+
+06056b38: pointer to "encounter slot tables"
+0605669c: 1 = random encounters on, 0 = off
+  - read at 0602718e (f18e) every step
+060a1130 = encounter rate mitigation level?
+  - higher value = lower encounter probabilities
+  - code does not allow values higher than 0x32?
+  - oh, this is always set to either elie's level or the average party
+    level, divided by two
+  - set at 060295ae after battle
+    - by calling 06050210 = some system call?
+06052844 = "encounter safety counter"
+  - decrements each step -- random encounters will not occur until it
+    reaches zero
+  - reset to an apparently random value after battle
+    - from 06018344 (344)
+      - random number from 0 to 6, plus 5?
+    irrelevant:
+    - also from 002e4708
+      - which gets this number from 25818000 -- CD-ROM registers???
+        plus parameter r5
+060528BA = table of 0x68 16-bit "base encounter probabilities"
+  - 3a8ba-3a98c
+  - basically, every time the player moves a step (the distance moved when a
+    directional button is tapped), the game generates a random(?) number and
+    uses it as an index into this table. it then generates a random(?) number
+    from 1 to 10000, and if it's lower than the value from the table, a random
+    encounter occurs
+  - this table is organized with lower probabilities first -- the "encounter
+    mitigation level" at 060A1130 is subtracted from the randomly chosen
+    index, thus reducing the probability of an encounter
+  - zeroing all = no encounters, ffff all = always encounter (once safety
+    counter at 06052844 has reached zero)
+  - probabilities range from 200/10000 to 10000/10000
+    
+1:128b4 seems to generate a random number?
 
 ***OVERWORLD DIALOGUE***
 
