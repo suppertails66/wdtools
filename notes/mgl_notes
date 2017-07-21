@@ -33,6 +33,28 @@ in "1":
     modify 1921A: 81 97 25 32 64 00 -> 04 25 32 64 00 00
     - this updates the printstring for character levels to accommodate the
       change above ("%s＠%2d" -> "%s@%2d\x00")
+      
+***TITLE SCREEN HALFWIDTH HACKS***
+(this uses an identical copy of the code from the overworld menus)
+file: 0
+  0601cf88 (4F88): 7C 08 -> 7C 04
+
+***TITLE SCREEN 8-BIT ENCODING HACK***
+(this uses an identical copy of the code from the overworld menus)
+in "0":
+  NOP the following:
+    ; 16-bit char: fetch second byte
+    0x00004CD4: 0x01DC	mov.b	@(r0,r13),r1
+    0x00004CD6: 0x4918	shll8	r9
+    0x00004CD8: 0x611C	extu.b	r1,r1
+    0x00004CDA: 0x291B	or	r1,r9
+    0x00004CDC: 0x7D01	add	#0x01,r13
+    ; check whether to draw full or halfwidth
+    0x00004CDE: 0x915F	mov.w	@(0x0C2,pc),r1	; 0x00004DA0 (0x7FFF)
+    0x00004CE0: 0x3916	cmp/hi	r1,r9
+    ; branch if rawchar < 0x8000 (halfwidth)
+    0x00004CE2: 0x8B01	bf	0x00004CE8
+  modify 4F10: 00 00 81 97 -> 00 00 00 40
     
 ***DIALOGUE HALFWIDTH HACKS***
   file: 1
@@ -180,14 +202,6 @@ the following specify widths for various battle strings:
           strings are
         - also, may have problems with stuff getting incorrectly overwritten,
           but ???
-          
-*** MISC BATTLE HACKS ***
-  fix hardcoded size of が separating stat name from number in level-up stat
-    increase messages (original format: {stat}が{amount}あがった
-    2:212e9 is the x-offset from {stat} -- increase it to accomodate "increased
-    by" or whatever the new message is
-    ; x-offset of numbers from "ga"
-    0x000212E8: 0x7D3D	add	#0x3D,r13
 
 *** SPELL NAME EXTENSION ***
   * battle: in addition to the below, see 6x8_magic_battle.asm
@@ -205,7 +219,38 @@ the following specify widths for various battle strings:
         - increase amount of padding
   * overworld magic use menu: see 6x8_magic_use_overworld.asm
   * overworld status screen magic list: see 6x8_magic_status.asm
-
+          
+*** MISC BATTLE HACKS ***
+  fix hardcoded size of が separating stat name from number in level-up stat
+    increase messages (original format: {stat}が{amount}あがった
+    2:212e9 is the x-offset from {stat} -- increase it to accomodate "increased
+    by" or whatever the new message is
+    ; x-offset of numbers from "ga"
+    0x000212E8: 0x7D3D	add	#0x3D,r13
+  increase hardcoded size of "attack" and "defend" dialog boxes to fit
+  translated strings
+    26BAE: E7 58 -> E7 60
+  fix calculation of width of variable-size text windows to accommodate
+  halfwidth hack
+    regular magic target selection:
+      change this:
+        0x00023DBE: 0x4021	shar	r0
+        0x00023DC0: 0x4008	shll2	r0
+        0x00023DC2: 0x4008	shll2	r0
+      to this:
+        0x00023DBE: 0x4008	shll2	r0
+        0x00023DC0: 0x4008	shll2	r0
+        0x00023DC2: 0x4021	shar	r0
+    union magic target selection:
+      change this:
+        0x0002457C: 0x4021	shar	r0
+        0x0002457E: 0x4008	shll2	r0
+        0x00024580: 0x4008	shll2	r0
+      to this:
+        0x0002457C: 0x4008	shll2	r0
+        0x0002457E: 0x4008	shll2	r0
+        0x00024580: 0x4021	shar	r0
+      
 
 
 
@@ -225,6 +270,17 @@ the following specify widths for various battle strings:
 060d843c
 060e51c4
     
+*** enemy stats ***
+PLT.BIN: DC54 = enemy stat table?
+  - 0x30-byte structs:
+    - hp
+    - attack
+    - ...
+
+002742b0 = pointer to enemy stat table, e.g. 00281e54
+  - stat table = 0x30-byte structs
+  - e.g. insect bolas at 00282214
+    - this corresponds to e014 in PLT.BIN
   
 *** escaping ***
 takeaway: freeze 060862fc to 1 to always escape (even if you aren't trying to)
@@ -276,6 +332,13 @@ takeaway: freeze 0605669c to 0 to disable random encounters
 06056680 = indicators of present party members?
 
 06056b38: pointer to "encounter slot tables"
+  - three sections:
+    - 0x8 bytes: enemy 1 type?
+    - 0x8 bytes: enemy 2 type?
+    - 0x10 bytes: nybble pairs indicating range of enemies of the given type
+      that can appear in an encounter
+      - e.g. 0x24 = 2 to 4 enemies?
+      - each byte corresponds to the enemy type given 0x10 bytes earlier
 0605669c: 1 = random encounters on, 0 = off
   - read at 0602718e (f18e) every step
 060a1130 = encounter rate mitigation level?
@@ -295,6 +358,12 @@ takeaway: freeze 0605669c to 0 to disable random encounters
     - also from 002e4708
       - which gets this number from 25818000 -- CD-ROM registers???
         plus parameter r5
+06052848: table for each enemy type giving probability of encounter
+  - 1b each, 0x72 in total?
+  - higher = greater chance of having an encounter
+    - note: not probability of _being present_ in an encounter, probability
+      of _the game triggering an encounter in the first place_
+      i.e. higher values increase the encounter rate
 060528BA = table of 0x68 16-bit "base encounter probabilities"
   - 3a8ba-3a98c
   - basically, every time the player moves a step (the distance moved when a
@@ -308,8 +377,71 @@ takeaway: freeze 0605669c to 0 to disable random encounters
   - zeroing all = no encounters, ffff all = always encounter (once safety
     counter at 06052844 has reached zero)
   - probabilities range from 200/10000 to 10000/10000
+  - when the game rolls an encounter, it calculates a base index into this
+    table given by:
+      (((enemy1rate * enemy1count) + (enemy2rate * enemy2count))
+        / (min_enemy1_count + min_enemy2_count + actual_total_enemies))
+      + 0x34
+      - (player_level / 2)
+    note that (player_level / 2) is capped at 0x32
     
 1:128b4 seems to generate a random number?
+
+enemy hp:
+  0607e052 <-- this
+    0607e054 = max hp?
+      - written at 2:06036590 (1e590)
+  0608689e
+  060b0700
+  060b0704
+  
+enemy battle struct (ex. 0607e04c?)
+  - 4b level?
+  - 4b current hp
+  - 4b max hp
+  - 4b ??? -1
+  - 4b ??? -1
+  - 4b attack
+  
+060678b4
+
+x: 7f 80 00 1f
+y: fd 00 00 00
+z: fa 00 00 00
+
+temp = z
+x = x ^ y = 8280001f
+x = !x = 7D7FFFE0
+T = !(x & 0x02) = 1
+rotate T to high bit of y = fe8000000
+rotate old low bit of y to temp = 3fc0000f
+rotate old low bit of temp to z = fd000000
+b = 71 + y = 
+rotate: b = bfa00011
+c = b ^ temp = 8060001e
+x = c
+y = y
+z = z?
+
+result:
+
+x: 7d 60 00 1f
+y: fe 80 00 00
+z: fd 00 00 00
+return 1f
+
+next time:
+
+x: 7f e0 00 1f
+y: ff 40 00 00
+z: fe 80 00 00
+return 1f
+
+x: 7f 58 00 1f
+y: ff a0 00 00
+z: ff 40 00 00
+return 1f
+
 
 ***OVERWORLD DIALOGUE***
 
@@ -1240,3 +1372,48 @@ also:
   96 DE FD 9E 97 95 E4 9C 00
    	か゛んせきおとし
   - HARDCODED halfwidth hiragana
+  
+moved to 002f4e29
+"attack" to 060d7a04
+decompressed to 060d7f00
+first nonzero data to 060d7f20
+; call 2d73c (send pixel data to vdp?)
+0x0001A940: 0x400B	jsr	@r0
+  - called at 060328ea (1a8ea)
+goes to (2)5c47b40
+structs (0x24 bytes?) with vram pointers starting(?) at 0609a2b8
+  - pointer to raw pixel data?
+  - pointer to vram target?
+  - "Attack" -- 0609a4d4?
+    - to e.g. 25c4ba20 (pointer at 0609a4d8)
+    - pointers to decompressed graphic:
+      - 0609a4d4 (+4 = texture)
+      - 060d7d50 (+4 = texture)
+      - 060d7e10 (-18 = texture)
+      - texture: 060b8368
+      - texture: 060d7df8
+25c484c0
+final pointers to texture at:
+  060b8368
+  060d7d54
+  060d7df8
+  
+0605d73f = フレイズ
+  - copied to 060e5ce0
+  - 060e5c44
+  
+20114 = ??
+27D70 = ??
+25692 = ??
+1fe08 = ??
+
+1BD04
+
+1C112: call to 3d1f8 (strlen) to determine text box width on
+  magic target screen
+  - called from 23db2
+
+06036300 (1e300) -- generate dialog box
+  - for attack, called at 0603b8e0 (238e0) and 0603ebb0 (26bb0)
+  - for defense, called at 0603bb20 (23b20) and 0603ebb0
+  - for spell names, called at 0603bdd4 (23dd4)
