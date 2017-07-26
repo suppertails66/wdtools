@@ -78,6 +78,8 @@ l2eb_stats: Compares enemy stat tables.
 l2eb_txt: Extracts text from US version of the game.
 
 *** MAHOU GAKUEN LUNAR! ***
+mgl_grp_conv: Graphic conversion utility.
+mgl_img_decmp: Decompressor for image data.
 mgl_str_insr: String insertion utility.
 mgl_strtab_extr: Extracts string pointer tables. See mgl_strtab.txt.
 
