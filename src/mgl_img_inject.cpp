@@ -13,22 +13,24 @@ using namespace BlackT;
 
 // Size of the buffer used to convert !all! of the source images to
 // a data block
-const static int imageConversionBufferSize = 0x100000;
+const int imageConversionBufferSize = 0x100000;
 
 // Size of the buffer used to compress the converted images
-const static int imageCompressionBufferSize = 0x100000;
+const int imageCompressionBufferSize = 0x100000;
 
 // Byte alignment required for start of a character table in VRAM
-const static int vramCharacterTableAlignment = 0x20;
+const int vramCharacterTableAlignment = 0x20;
 
 // Size of each struct in the index file
-const static int indexStructSize = 0x18;
+const int indexStructSize = 0x18;
 
 // Offset within index struct of the palette data offset
-const static int indexStructCmdcolrOffset = 2;
+const int indexStructCmdcolrOffset = 2;
 
 // Offset within index struct of the source data offset
-const static int indexStructCmdsrcaOffset = 4;
+const int indexStructCmdsrcaOffset = 4;
+
+const char* paletteFileName = "palette.bin";
 
 struct SourceImageData {
   unsigned int convertedOffset;
@@ -105,9 +107,9 @@ int main(int argc, char* argv[]) {
   
   // Append the palette data, if it exists
   int paletteDataOffset = -1;
-  if (fileExists(basePath + "palette.bin")) {
+  if (fileExists(basePath + paletteFileName)) {
     paletteDataOffset = convertedImageDataSize;
-    BufferedFile paletteFile = getFile((basePath + "palette.bin").c_str());
+    BufferedFile paletteFile = getFile((basePath + paletteFileName).c_str());
     std::memcpy(imageConversionBuffer + convertedImageDataSize,
                 paletteFile.buffer, paletteFile.size);
     convertedImageDataSize += paletteFile.size;
