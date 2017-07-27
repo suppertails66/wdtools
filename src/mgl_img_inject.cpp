@@ -30,9 +30,6 @@ const static int indexStructCmdcolrOffset = 2;
 // Offset within index struct of the source data offset
 const static int indexStructCmdsrcaOffset = 4;
 
-// parameters:
-// mgl_img_inject srcindexfile indexoffset dstindexfile srcimagefile imageoffset dstimagefile imagedir/
-
 struct SourceImageData {
   unsigned int convertedOffset;
   int width;
