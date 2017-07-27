@@ -81,6 +81,7 @@ l2eb_txt: Extracts text from US version of the game.
 mgl_grp_conv: Graphic conversion utility.
 mgl_img_decmp: Decompressor for image data.
 mgl_img_cmp: Compressor for image data.
+mgl_img_inject: Image insertion utility.
 mgl_str_insr: String insertion utility.
 mgl_strtab_extr: Extracts string pointer tables. See mgl_strtab.txt.
 

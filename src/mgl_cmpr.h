@@ -1,5 +1,7 @@
+#include "util/TGraphic.h"
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <cstring>
 #include <cstdlib>
 
@@ -9,6 +11,41 @@ const static int decmpBufferStartPos = 0xFEE;
 
 const static int minimumLookbackSize = 3;
 const static int maximumLookbackSize = 18;
+
+struct BufferedFile {
+  char* buffer;
+  int size;
+};
+
+int fsize(std::istream& ifs) {
+  int pos = ifs.tellg();
+  ifs.seekg(0, std::ios_base::end);
+  int sz = ifs.tellg();
+  ifs.seekg(pos);
+  return sz;
+}
+
+BufferedFile getFile(const char* filename) {
+  std::ifstream ifs(filename, std::ios_base::binary);
+  int sz = fsize(ifs);
+  
+  BufferedFile result;
+  result.buffer = new char[sz];
+  result.size = sz;
+  ifs.read(result.buffer, sz);
+  
+  return result;
+}
+
+void saveFile(BufferedFile file, const char* filename) {
+  std::ofstream ofs(filename, std::ios_base::binary);
+  ofs.write(file.buffer, file.size);
+}
+
+bool fileExists(const std::string& filename) {
+  std::ifstream ifs(filename.c_str(), std::ios_base::binary);
+  return fsize(ifs) >= 0;
+}
 
 // Decompresses image data, returning size of the decompressed data
 int decompressMglImg(const unsigned char* input,
@@ -99,6 +136,8 @@ struct MatchResult {
   int len;
 };
 
+// Check how many characters match in two sequences, up to the
+// maximum lookback length
 MatchResult checkMatch(const unsigned char* input,
                        int length,
                        const unsigned char* check) {
@@ -121,6 +160,7 @@ MatchResult checkMatch(const unsigned char* input,
   return result;
 }
 
+// Find the best possible lookback in an input stream
 MatchResult findBestMatch(const unsigned char* input,
                           int length) {
   MatchResult bestResult { -1, 0 };
@@ -172,8 +212,6 @@ int compressMglImg(const unsigned char* rawInput,
     
     // if the match exceeds the minimum length, add a lookback command
     if (bestMatch.len >= minimumLookbackSize) {
-//      std::cout << bestMatch.pos << " " << bestMatch.len << std::endl;
-//      char c; std::cin >> c;
       // command bytes are initialized to zero, so the command bit is already
       // unset and we don't need to change it
       
@@ -218,3 +256,74 @@ int compressMglImg(const unsigned char* rawInput,
   return putpos;
 }
 
+inline BlackT::TColor pixelToColor4bpp(int value) {
+  int level = (int)(value << 4) | value;
+  return BlackT::TColor(level, level, level,
+                (value == 0) ? BlackT::TColor::fullAlphaTransparency
+                  : BlackT::TColor::fullAlphaOpacity);
+}
+
+void placePixel(BlackT::TGraphic& dst, BlackT::TColor color, int pixelNum) {
+  int x = (pixelNum % dst.w());
+  int y = (pixelNum / dst.w());
+  dst.setPixel(x, y, color);
+}
+
+// Read a 4bpp graphic from raw data into a TGraphic.
+// The resulting TGraphic is grayscale, converting 0 -> #000000, 1 -> #111111,
+// etc.
+// Zero values are treated as transparent.
+void read4bppGraphicGrayscale(const unsigned char* src,
+                              BlackT::TGraphic& dst,
+                              int width,
+                              int height) {
+  dst.resize(width, height);
+  
+  int numBytes = (width * height) / 2;
+  
+  for (int i = 0; i < numBytes; i++) {
+    int pix1 = (*src & 0xF0) >> 4;
+    int pix2 = (*src & 0x0F);
+    
+    BlackT::TColor color1 = pixelToColor4bpp(pix1);
+    BlackT::TColor color2 = pixelToColor4bpp(pix2);
+    
+    placePixel(dst, color1, (i * 2));
+    placePixel(dst, color2, (i * 2) + 1);
+    
+    src++;
+  }
+}
+
+// Converts a graphic to 4bpp Saturn format, returning the size of the
+// converted data.
+// Input graphics are assumed to be grayscale; only the high nybble of the red
+// component is actually used to determine the color index.
+int writeGraphic4bpp(BlackT::TGraphic& src,
+                           unsigned char* dst) {
+  // parity of next write -- if true, we're targeting the low nybble
+  // order is high -> low
+  bool lowNyb = false;
+  
+  int putpos = 0;                    
+  for (int j = 0; j < src.h(); j++) {
+    for (int i = 0; i < src.w(); i++) {
+      BlackT::TColor color = src.getPixel(i, j);
+      int colorIndex = (color.r() & 0xF0) >> 4;
+      
+      if (lowNyb) {
+        // write to low nybble and advance to next position
+        dst[putpos++] |= colorIndex;
+      }
+      else {
+        // write to high nybble (initializing low bits)
+        dst[putpos] = (colorIndex << 4);
+      }
+      
+      // flip parity
+      lowNyb = !lowNyb;
+    }
+  }
+  
+  return putpos;
+}
