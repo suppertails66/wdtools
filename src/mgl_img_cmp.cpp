@@ -6,30 +6,30 @@
 
 using namespace std;
 
-// maximum size of decompressed data -- don't exceed this
+// maximum size of compressed data -- don't exceed this
 const static int outputBufferSize = 0x100000;
 
 int main(int argc, char* argv[]) {
   if (argc < 3) {
-    cout << "Mahou Gakuen Lunar! image data decompressor" << endl;
-    cout << "Usage: " << argv[0] << "<infile> <outfile> [options]" << endl;
-    cout << "Options: " << endl;
-    cout << "  -s [startpos]   Specifies starting offset in infile.\n";
-    cout << "  -l [length]     Specifies size of data in infile.\n";
+    cout << "Mahou Gakuen Lunar! image data compressor" << endl;
+    cout << "Usage: " << argv[0] << " <infile> <outfile>" << endl;
+//    cout << "Options: " << endl;
+//    cout << "  -s [startpos]   Specifies starting offset in infile.\n";
+//    cout << "  -l [length]     Specifies size of data in infile.\n";
     return 0;
   }
   
   int startpos = 0;
   int length = -1;
   
-  for (int i = 3; i < argc - 1; i++) {
+/*  for (int i = 3; i < argc - 1; i++) {
     if (strcmp(argv[i], "-s") == 0) {
       sscanf(argv[i + 1], "%i", &startpos);
     }
     else if (strcmp(argv[i], "-l") == 0) {
       sscanf(argv[i + 1], "%i", &length);
     }
-  }
+  } */
   
   ifstream ifs(argv[1], ios_base::binary);
   
@@ -47,12 +47,12 @@ int main(int argc, char* argv[]) {
   unsigned char* input = new unsigned char[length];
   ifs.read((char*)input, length);
   
-  int outputSize = decompressMglImg(input, length, outputBuf);
+  int outputSize = compressMglImg(input, length, outputBuf);
   
   // clean up
   delete input;
   
-  // write decompressed data to file
+  // write compressed data to file
   ofstream ofs(argv[2], ios_base::binary);
   ofs.write((char*)outputBuf, outputSize);
   
