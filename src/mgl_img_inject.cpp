@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
     cerr << "Error: Compressed image data is too big!" << endl;
     cerr << "Original size: " << originalImageSize << endl;
     cerr << "New size: " << compressedImageDataSize
-      << "(" << compressedImageDataSize - originalImageSize
+      << " (" << compressedImageDataSize - originalImageSize
       << " bytes too large)" << endl;
     return 1;
   }
