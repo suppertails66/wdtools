@@ -20,7 +20,7 @@ PREFIX := /usr/local
 BINDIR := $(PREFIX)/bin
 INSTALL := install
 
-tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt l2eb_data l2eb_txt l2eb_grp l2eb_stats cf2_stats sjis_srch mgl_strtab_extr mgl_str_insr mgl_img_decmp mgl_img_cmp mgl_img_inject mgl_grp_conv
+tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt l2eb_data l2eb_txt l2eb_grp l2eb_stats cf2_stats sjis_srch mgl_strtab_extr mgl_str_insr mgl_img_decmp mgl_img_cmp mgl_img_inject mgl_grp_conv mgl_img_extr mgl_img_insr
 
 all: blackt copycat $(OBJ) $(tools)
 	
@@ -170,6 +170,12 @@ mgl_img_inject: blackt $(OBJ)
 	
 mgl_grp_conv: blackt $(OBJ)
 	$(CXX) $(OBJ) src/mgl_grp_conv.cpp -o mgl_grp_conv $(CXXFLAGS)
+	
+mgl_img_extr: blackt $(OBJ)
+	$(CXX) $(OBJ) src/mgl_img_extr.cpp -o mgl_img_extr $(CXXFLAGS)
+	
+mgl_img_insr: blackt $(OBJ)
+	$(CXX) $(OBJ) src/mgl_img_insr.cpp -o mgl_img_insr $(CXXFLAGS)
 
 -include $(DEP)
 

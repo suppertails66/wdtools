@@ -1,21 +1,206 @@
 #include "util/TGraphic.h"
+#include "util/ByteConversion.h"
+#include "util/TStringConversion.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 #include <cstring>
 #include <cstdlib>
 
-const static int decmpBufferSize = 0x1000;
-const static int decmpBufferWrap = 0xFFF;
-const static int decmpBufferStartPos = 0xFEE;
+const int decmpBufferSize = 0x1000;
+const int decmpBufferWrap = 0xFFF;
+const int decmpBufferStartPos = 0xFEE;
 
-const static int minimumLookbackSize = 3;
-const static int maximumLookbackSize = 18;
+const int minimumLookbackSize = 3;
+const int maximumLookbackSize = 18;
+
+const int vramTableEntrySize = 0x18;
+
+// Size of a palette (assumed 4bpp / 16 16-bit entries)
+const int paletteSize = 0x20;
+
+const char* glueFileName = "index.txt";
+
+const char* trailerFileName = "trailer.bin";
+
+const char* paletteBaseName = "palette";
+
+const int vramCharacterDataAlignment = 0x20;
 
 struct BufferedFile {
   char* buffer;
   int size;
 };
+
+struct VramTableEntry {
+  int cmdpmod;
+  int cmdcolr;
+  int cmdsrca;
+  int cmdsize;
+  int cmdxa;
+  int cmdya;
+  int cmdxb;
+  int cmdyb;
+  int cmdxc;
+  int cmdyc;
+  int cmdxd;
+  int cmdyd;
+  
+  int width() const {
+    return ((cmdsize & 0x3F00) >> 8) * 8;
+  }
+  
+  int height() const {
+    return (cmdsize & 0x00FF);
+  }
+  
+  int sourceOffset() const {
+    return (cmdsrca * 8);
+  }
+  
+  void setSourceOffset(int offset) {
+    cmdsrca = (offset / 8);
+  }
+  
+  int colorMode() const {
+    return (cmdpmod & 0x0038) >> 3;
+  }
+  
+  int paletteOffset() const {
+    return cmdcolr * 8;
+  }
+  
+  void setPaletteOffset(int offset) {
+    cmdcolr = (offset / 8);
+  }
+  
+  int fromData(const char* src) {
+    cmdpmod = BlackT::ByteConversion::fromBytes(src + 0, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    cmdcolr = BlackT::ByteConversion::fromBytes(src + 2, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    cmdsrca = BlackT::ByteConversion::fromBytes(src + 4, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    cmdsize = BlackT::ByteConversion::fromBytes(src + 6, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    cmdxa = BlackT::ByteConversion::fromBytes(src + 8, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    cmdya = BlackT::ByteConversion::fromBytes(src + 10, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    cmdxb = BlackT::ByteConversion::fromBytes(src + 12, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    cmdyb = BlackT::ByteConversion::fromBytes(src + 14, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    cmdxc = BlackT::ByteConversion::fromBytes(src + 16, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    cmdyc = BlackT::ByteConversion::fromBytes(src + 18, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    cmdxd = BlackT::ByteConversion::fromBytes(src + 20, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    cmdyd = BlackT::ByteConversion::fromBytes(src + 22, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+      
+    return vramTableEntrySize;
+  }
+  
+  int toData(char* dst) const {
+    BlackT::ByteConversion::toBytes(cmdpmod, dst + 0, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    BlackT::ByteConversion::toBytes(cmdcolr, dst + 2, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    BlackT::ByteConversion::toBytes(cmdsrca, dst + 4, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    BlackT::ByteConversion::toBytes(cmdsize, dst + 6, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::nosign);
+    BlackT::ByteConversion::toBytes(cmdxa, dst + 8, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    BlackT::ByteConversion::toBytes(cmdya, dst + 10, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    BlackT::ByteConversion::toBytes(cmdxb, dst + 12, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    BlackT::ByteConversion::toBytes(cmdyb, dst + 14, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    BlackT::ByteConversion::toBytes(cmdxc, dst + 16, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    BlackT::ByteConversion::toBytes(cmdyc, dst + 18, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    BlackT::ByteConversion::toBytes(cmdxd, dst + 20, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+    BlackT::ByteConversion::toBytes(cmdyd, dst + 22, 2,
+      BlackT::EndiannessTypes::big, BlackT::SignednessTypes::sign);
+      
+    return vramTableEntrySize;
+  }
+  
+  void load(std::istream& ifs) {
+    ifs >> cmdpmod
+        >> cmdcolr
+        >> cmdsrca
+        >> cmdsize
+        >> cmdxa
+        >> cmdya
+        >> cmdxb
+        >> cmdyb
+        >> cmdxc
+        >> cmdyc
+        >> cmdxd
+        >> cmdyd;
+  }
+  
+  void save(std::ostream& ofs) const {
+    ofs << cmdpmod << " "
+        << cmdcolr << " "
+        << cmdsrca << " "
+        << cmdsize << " "
+        << cmdxa << " "
+        << cmdya << " "
+        << cmdxb << " "
+        << cmdyb << " "
+        << cmdxc << " "
+        << cmdyc << " "
+        << cmdxd << " "
+        << cmdyd << " ";
+  }
+};
+
+struct GlueFileEntry {
+  int num;
+  std::string imageFileName;
+  std::string paletteFileName;
+  VramTableEntry vramTableEntry;
+  
+  void load(std::istream& ifs) {
+    ifs >> num
+        >> imageFileName
+        >> paletteFileName;
+    vramTableEntry.load(ifs);
+  }
+  
+  void save(std::ostream& ofs) const {
+    ofs << num << " "
+        << imageFileName << " "
+        << paletteFileName << " ";
+    vramTableEntry.save(ofs);
+    ofs << std::endl;
+  }
+};
+
+int getVramAlignedOffset(int offset) {
+  if ((offset % vramCharacterDataAlignment) != 0) {
+    offset
+      += (vramCharacterDataAlignment - (offset % vramCharacterDataAlignment));
+  }
+  
+  return offset;
+}
+
+std::string makeImageFileName(int num) {
+  return BlackT::TStringConversion::toString(num) + ".png";
+}
+
+std::string makePaletteFileName(int num) {
+  return paletteBaseName + BlackT::TStringConversion::toString(num) + ".bin";
+}
 
 int fsize(std::istream& ifs) {
   int pos = ifs.tellg();
@@ -299,6 +484,8 @@ void read4bppGraphicGrayscale(const unsigned char* src,
 // converted data.
 // Input graphics are assumed to be grayscale; only the high nybble of the red
 // component is actually used to determine the color index.
+//
+// Any pixel with nonzero alpha is assumed to be transparent, i.e. color zero!
 int writeGraphic4bpp(BlackT::TGraphic& src,
                            unsigned char* dst) {
   // parity of next write -- if true, we're targeting the low nybble
@@ -310,6 +497,8 @@ int writeGraphic4bpp(BlackT::TGraphic& src,
     for (int i = 0; i < src.w(); i++) {
       BlackT::TColor color = src.getPixel(i, j);
       int colorIndex = (color.r() & 0xF0) >> 4;
+      
+      if (color.a() == 0) colorIndex = 0;
       
       if (lowNyb) {
         // write to low nybble and advance to next position
