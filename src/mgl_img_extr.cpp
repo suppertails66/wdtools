@@ -18,6 +18,14 @@ const int vramDecompressionBufferSize = 0x100000;
 int main(int argc, char* argv[]) {
   // mgl_img_extr indexfile indexoffset imagefile imageoffset outpath
   if (argc < 6) {
+    cout << "Mahou Gakuen Lunar! image data extractor" << endl;
+    cout << "Usage: " << argv[0] << " <ifile> <ioffset>"
+           << " <imgfile> <imgoffset> <outpath>" << endl << endl;
+    cout << "  ifile      Index file containing VRAM command table list\n";
+    cout << "  ioffset    Offset in the file of the aforementioned list\n";
+    cout << "  imgfile    File containing image data to read\n";
+    cout << "  imgoffset  Offset of the aforementioned image data\n";
+    cout << "  outpath    Directory to which to output files\n";
     
     return 0;
   }

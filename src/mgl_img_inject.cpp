@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
 
   if (argc < 8) {
     cout << "Mahou Gakuen Lunar! image data injector" << endl;
-    cout << "Usage: " << argv[0] << "<srcdir> <imgfile>"
+    cout << "Usage: " << argv[0] << " <srcdir> <imgfile>"
            << " <imgoffset> <imgdst> <ifile> <ioffset> <idst>" << endl << endl;
     cout << "  srcdir     Path to source images: 0.png, 1.png, ...\n";
     cout << "  imgfile    File containing image data to patch over.\n";
