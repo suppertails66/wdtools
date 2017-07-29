@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
   int kanjiPutPos = kanjiFreeSpaceStart;
   
   // Read all input translation files in sequence
-  for (unsigned int i = 3; i < argc; i++) {
+  for (int i = 3; i < argc; i++) {
     string transFileName = argv[i];
     
     // Read translation file
@@ -61,8 +61,17 @@ int main(int argc, char* argv[]) {
         // place at original location if possible
   //      cerr << entry.originalSize << endl;
         if (entry.translatedText.size() <= entry.originalSize) {
-          strcpy(fileBuffer + entry.sourceFileOffset,
-                 entry.translatedText.c_str());
+          // can't use strcpy -- there may be embedded nulls in the text
+          // that have to be preserved
+          memcpy(fileBuffer + entry.sourceFileOffset,
+                 entry.translatedText.c_str(),
+                 entry.translatedText.size());
+          
+          // add terminator
+          memset(fileBuffer + entry.sourceFileOffset
+                  + entry.translatedText.size(),
+                 0,
+                 1);
         }
         // otherwise, move to KANJI.FNT
         else {
@@ -78,8 +87,15 @@ int main(int argc, char* argv[]) {
             << ": " << entry.sourceFile << ", " << entry.sourceFileOffset << ", "
               << entry.translatedText << endl;
           
-          strcpy(kanjiBuffer + startPos,
-                 entry.translatedText.c_str());
+          memcpy(kanjiBuffer + startPos,
+                 entry.translatedText.c_str(),
+                 entry.translatedText.size());
+          
+          // add terminator
+          memset(kanjiBuffer + startPos
+                  + entry.translatedText.size(),
+                 0,
+                 1);
           
           // update pointers
           unsigned int newPointer = kanjiLoadAddress + startPos;

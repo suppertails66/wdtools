@@ -104,6 +104,17 @@ void readStringLiteral(std::istream& ifs, std::string& str) {
   
   while (true) {
     // check escape sequences
+    //
+    // BUG: this is used to read the original text, which consists of 16-bit
+    // SJIS characters, but they're read byte-by-byte, causing the low
+    // byte to sometimes be interpreted as a backslash
+    // the only real consequence of this is that auto-computed lengths
+    // may be shorter than the original, which causes no harm
+    // ... except in the very bad case that the fake backslash is the last
+    // character before the terminator, which would make everything go
+    // to hell
+    //
+    // FIXME!
     if (ifs.peek() == '\\') {
       ifs.get();
       
@@ -114,11 +125,11 @@ void readStringLiteral(std::istream& ifs, std::string& str) {
         string value;
         value += ifs.get();
         value += ifs.get();
-        ostringstream oss;
-        oss.str(value);
-        char c = 0;
-        oss << hex << c;
-        str += c;
+        istringstream iss;
+        iss.str(value);
+        int c = 0;
+        iss >> hex >> c;
+        str += (char)c;
         continue;
       }
       else {

@@ -96,10 +96,16 @@ int main(int argc, char* argv[]) {
   map<int, bool> uniquePaletteOffsets;
   
   for (unsigned int i = 0; i < vramTableEntries.size(); i++) {
-    uniqueSourceOffsets[vramTableEntries[i].sourceOffset()]
-      = vramTableEntries[i];
-    uniquePaletteOffsets[vramTableEntries[i].paletteOffset()]
-      = true;
+    // due to some odd recycling of blank space in earlier images to
+    // create smaller ones later on, only remember the first entry,
+    // which should have the full dimensions
+    if (uniqueSourceOffsets.find(vramTableEntries[i].sourceOffset())
+          == uniqueSourceOffsets.end()) {
+      uniqueSourceOffsets[vramTableEntries[i].sourceOffset()]
+        = vramTableEntries[i];
+      uniquePaletteOffsets[vramTableEntries[i].paletteOffset()]
+        = true;
+    }
   }
   
   // Extract all unique image data.
