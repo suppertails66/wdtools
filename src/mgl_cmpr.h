@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <vector>
 #include <cstring>
 #include <cstdlib>
 
@@ -448,6 +449,13 @@ inline BlackT::TColor pixelToColor4bpp(int value) {
                   : BlackT::TColor::fullAlphaOpacity);
 }
 
+inline BlackT::TColor pixelToColor8bpp(int value) {
+  int level = value;
+  return BlackT::TColor(level, level, level,
+                (value == 0) ? BlackT::TColor::fullAlphaTransparency
+                  : BlackT::TColor::fullAlphaOpacity);
+}
+
 void placePixel(BlackT::TGraphic& dst, BlackT::TColor color, int pixelNum) {
   int x = (pixelNum % dst.w());
   int y = (pixelNum / dst.w());
@@ -475,6 +483,50 @@ void read4bppGraphicGrayscale(const unsigned char* src,
     
     placePixel(dst, color1, (i * 2));
     placePixel(dst, color2, (i * 2) + 1);
+    
+    src++;
+  }
+}
+
+// Read an 8bpp graphic from raw data into a TGraphic.
+// The resulting TGraphic is grayscale, converting 0 -> #000000, 1 -> #010101,
+// etc.
+// Zero values are treated as transparent.
+void read8bppGraphicGrayscale(const unsigned char* src,
+                              BlackT::TGraphic& dst,
+                              int width,
+                              int height) {
+  dst.resize(width, height);
+  
+  int numBytes = (width * height);
+  
+  for (int i = 0; i < numBytes; i++) {
+    int pix1 = (*src);
+    
+    BlackT::TColor color1 = pixelToColor8bpp(pix1);
+    
+    placePixel(dst, color1, i);
+    
+    src++;
+  }
+}
+
+void read8bppGraphicPalettized(const unsigned char* src,
+                              BlackT::TGraphic& dst,
+                              int width,
+                              int height,
+                              std::vector<BlackT::TColor> palette) {
+  dst.resize(width, height);
+  
+  int numBytes = (width * height);
+  
+  for (int i = 0; i < numBytes; i++) {
+    int pix1 = (*src);
+    
+//    BlackT::TColor color1 = pixelToColor8bpp(pix1);
+    BlackT::TColor color1 = palette[pix1];
+    
+    placePixel(dst, color1, i);
     
     src++;
   }
