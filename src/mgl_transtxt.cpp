@@ -68,6 +68,32 @@ void escapeString(const std::string& src, std::string& dst) {
   } */
 }
 
+void escapeStringNew(const std::string& src, std::string& dst) {
+  dst += "\"";
+  for (int i = 0; i < src.size(); i++) {
+    // check for 2-byte sjis sequences
+/*    unsigned int sjischeck = src[i];
+    if ((i < src.size() - 1)
+         && (((sjischeck >= 0x81) && (sjischeck <= 0x9F))
+              || ((sjischeck >= 0xE0) && (sjischeck <= 0xEF)))) {
+      dst += src[i];
+      dst += src[i + 1];
+      ++i;
+      continue;
+    } */
+    
+    // newlines
+//    if (src[i] == '\n') {
+//      dst += "\"\n\"";
+//      continue;
+//    }
+    
+    dst += src[i];
+  }
+  
+  dst += "\"";
+}
+
 void skipWhitespace(std::istream& ifs) {
   while (ifs.good() && isspace(ifs.peek())) ifs.get();
 }
@@ -78,6 +104,31 @@ void advance(std::istream& ifs) {
     string str;
     getline(ifs, str);
     skipWhitespace(ifs);
+  }
+}
+
+void advanceNew(std::istream& ifs) {
+//  skipWhitespace(ifs);
+  while (ifs.good() && (ifs.peek() == '"')) {
+    string str;
+    getline(ifs, str);
+    skipWhitespace(ifs);
+  }
+}
+
+void readCsvCell(std::istream& ifs, std::string& dst) {
+  dst = "";
+
+  bool escaping = false;
+  while (ifs.good()) {
+    char next = ifs.get();
+    // escaped literal
+    if (next == '"') escaping = !escaping;
+    else {
+      // check for end of cell
+      if (!escaping && ((next == ',') || (next == '\n'))) break;
+      else dst += next;
+    }
   }
 }
 
@@ -102,7 +153,20 @@ void readStringLiteral(std::istream& ifs, std::string& str) {
   string temp;
   getline(ifs, temp);
   
+//  if (ifs.tellg() >= 0x1892e) {
+//    cout << hex << ifs.tellg() << " " << temp << endl;
+//  }
+  
   while (true) {
+    // check for 2-byte SJIS sequences
+    unsigned int sjischeck = ifs.peek();
+    if (((sjischeck >= 0x81) && (sjischeck <= 0x9F))
+        || ((sjischeck >= 0xE0) && (sjischeck <= 0xEF))) {
+      str += ifs.get();
+      str += ifs.get();
+      continue;
+    }
+  
     // check escape sequences
     //
     // BUG: this is used to read the original text, which consists of 16-bit
@@ -147,6 +211,67 @@ void readStringLiteral(std::istream& ifs, std::string& str) {
   
   ifs.get();
 }
+
+void readStringLiteralNew(std::istream& ifs, std::string& str) {
+  str = "";
+
+//  advance(ifs);
+  
+  // skip initial "<\n"
+//  string temp;
+//  getline(ifs, temp);
+  
+  bool escaping = false;
+  while (true) {
+    // check for 2-byte SJIS sequences
+    unsigned int sjischeck = ifs.peek();
+    if (((sjischeck >= 0x81) && (sjischeck <= 0x9F))
+        || ((sjischeck >= 0xE0) && (sjischeck <= 0xEF))) {
+      str += ifs.get();
+      str += ifs.get();
+      continue;
+    }
+    
+    // escaped literals
+    if (ifs.peek() == '"') {
+      ifs.get();
+      escaping = !escaping;
+      continue;
+    }
+  
+    // check escape sequences
+    if (ifs.peek() == '\\') {
+      ifs.get();
+      
+      if (ifs.peek() == 'x') {
+        ifs.get();
+        
+        // read 2-digit hex literal
+        string value;
+        value += ifs.get();
+        value += ifs.get();
+        istringstream iss;
+        iss.str(value);
+        int c = 0;
+        iss >> hex >> c;
+        str += (char)c;
+        continue;
+      }
+      else {
+        str += ifs.get();
+        continue;
+      }
+    }
+    
+    char next = ifs.get();
+    // terminator: non-escaped comma or newline
+    if (!escaping && ((next == ',') || (next == '\n'))) break;
+    
+    str += next;
+  }
+  
+//  ifs.get();
+}
   
 void TranslationEntry::save(std::ostream& ofs) {
   ofs << "#############################" << endl;
@@ -182,6 +307,33 @@ void TranslationEntry::save(std::ostream& ofs) {
   
   ofs << endl;
 }
+  
+void TranslationEntry::saveNew(std::ostream& ofs) {
+  ofs << sourceFile << "," << "0x" << hex << sourceFileOffset << ",";
+  
+  ofs << "0x" << hex << pointers.size();
+  for (unsigned int i = 0; i < pointers.size(); i++) {
+    ofs << " " << "0x" << hex << pointers[i];
+  }
+  ofs << ",";
+  
+  ofs << "0x" << hex << originalSize << ",";
+  
+//  ofs << originalText << ",";
+//  ofs << translatedText;
+
+  string originalTextEscaped;
+  string translatedTextEscaped;
+  escapeStringNew(originalText, originalTextEscaped);
+  escapeStringNew(translatedText, translatedTextEscaped);
+  
+  ofs << originalTextEscaped << ",";
+  ofs << translatedTextEscaped;
+  
+  ofs << ",";
+  
+  ofs << endl;
+}
 
 void TranslationEntry::load(std::istream& ifs) {
   advance(ifs);
@@ -204,8 +356,69 @@ void TranslationEntry::load(std::istream& ifs) {
   advance(ifs);
   ifs >> dec >> originalSize;
   
+//  if (sourceFileOffset == 0x46c64) {
+//    cout << hex << ifs.tellg() << endl;
+//  }
+  
   readStringLiteral(ifs, originalText);
   readStringLiteral(ifs, translatedText);
+  
+//  if (sourceFileOffset == 0x46c64) {
+//    for (int i = 0; i < originalText.size(); i++) {
+//      cout << hex << (unsigned int)((unsigned char)(originalText[i])) << " ";
+//    }
+//    cout << endl;
+//  }
+  
+  if ((signed int)originalSize == -1) originalSize = originalText.size();
+}
+
+void TranslationEntry::loadNew(std::istream& ifs) {
+  readCsvCell(ifs, sourceFile);
+  
+  istringstream iss;
+  
+  string sourceFileOffsetCell;
+  readCsvCell(ifs, sourceFileOffsetCell);
+  iss.str(sourceFileOffsetCell);
+  iss.clear();
+  
+  iss >> hex >> sourceFileOffset;
+  
+  string pointersCell;
+  readCsvCell(ifs, pointersCell);
+  iss.str(pointersCell);
+  iss.clear();
+  
+  unsigned int numPointers;
+  iss >> hex >> numPointers;
+  
+//  cout << numPointers << endl;
+//  cout << iss.str() << endl;
+//  char c; cin >> c;
+
+  for (unsigned int i = 0; i < numPointers; i++) {
+    unsigned int p;
+    iss >> hex >> p;
+    pointers.push_back(p);
+  }
+  
+  string originalSizeCell;
+  readCsvCell(ifs, originalSizeCell);
+  iss.str(originalSizeCell);
+  iss.clear();
+  
+  iss >> hex >> originalSize;
+  
+  readStringLiteralNew(ifs, originalText);
+  readStringLiteralNew(ifs, translatedText);
+  
+  // comments field
+  string commentsCell;
+  readCsvCell(ifs, commentsCell);
+  
+//  cout << sourceFile << " " << translatedText << " " << numPointers;
+//  char c; cin >> c;
   
   if ((signed int)originalSize == -1) originalSize = originalText.size();
 }
@@ -218,6 +431,43 @@ void TranslationFile::load(std::istream& ifs) {
     filenameEntriesMap[entry.sourceFile].push_back(entry);
     
     advance(ifs);
+  }
+}
+  
+void TranslationFile::loadNew(std::istream& ifs) {
+  // skip header row
+  string garbage;
+  getline(ifs, garbage);
+
+  while (ifs.good()) {
+    TranslationEntry entry;
+    entry.loadNew(ifs);
+//    cout << entry.sourceFileOffset << endl;
+    filenameEntriesMap[entry.sourceFile].push_back(entry);
+    
+    advance(ifs);
+  }
+}
+  
+void TranslationFile::save(std::ostream& ofs) {
+  for (FilenameTranslationEntryMap::iterator it = filenameEntriesMap.begin();
+       it != filenameEntriesMap.end();
+       ++it) {
+    vector<TranslationEntry>& entries = it->second;
+    for (int i = 0; i < entries.size(); i++) {
+      entries[i].save(ofs);
+    }
+  }
+}
+  
+void TranslationFile::saveNew(std::ostream& ofs) {
+  for (FilenameTranslationEntryMap::iterator it = filenameEntriesMap.begin();
+       it != filenameEntriesMap.end();
+       ++it) {
+    vector<TranslationEntry>& entries = it->second;
+    for (int i = 0; i < entries.size(); i++) {
+      entries[i].saveNew(ofs);
+    }
   }
 }
 

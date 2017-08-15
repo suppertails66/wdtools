@@ -40,7 +40,8 @@ int main(int argc, char* argv[]) {
     // Read translation file
     ifstream ifs(transFileName.c_str());
     TranslationFile translationFile;
-    translationFile.load(ifs);
+//    translationFile.load(ifs);
+    translationFile.loadNew(ifs);
     ifs.close();
     
     // Handle each file

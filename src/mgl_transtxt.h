@@ -10,9 +10,13 @@ int fsize(std::istream& ifs);
 
 std::string nextToken(std::istream& ifs);
 void escapeString(const std::string& src, std::string& dst);
+void escapeStringNew(const std::string& src, std::string& dst);
 void skipWhitespace(std::istream& ifs);
 void advance(std::istream& ifs);
+void advanceNew(std::istream& ifs);
 void readStringLiteral(std::istream& ifs, std::string& str);
+void readStringLiteralNew(std::istream& ifs, std::string& str);
+void readCsvCell(std::istream& ifs, std::string& dst);
 
 struct TranslationEntry {
 
@@ -26,7 +30,9 @@ struct TranslationEntry {
   std::vector<unsigned int> pointers;
   
   void save(std::ostream& ofs);
+  void saveNew(std::ostream& ofs);
   void load(std::istream& ifs);
+  void loadNew(std::istream& ifs);
   
 };
 
@@ -39,6 +45,9 @@ struct TranslationFile {
   FilenameTranslationEntryMap filenameEntriesMap;
   
   void load(std::istream& ifs);
+  void loadNew(std::istream& ifs);
+  void save(std::ostream& ofs);
+  void saveNew(std::ostream& ofs);
 };
 
 struct FreeSpaceEntry {
