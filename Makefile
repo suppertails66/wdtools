@@ -20,7 +20,7 @@ PREFIX := /usr/local
 BINDIR := $(PREFIX)/bin
 INSTALL := install
 
-tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt l2eb_data l2eb_txt l2eb_grp l2eb_stats cf2_stats sjis_srch mgl_strtab_extr mgl_str_insr mgl_str_fmtconv mgl_img_decmp mgl_img_cmp mgl_img_inject mgl_grp_conv mgl_img_extr mgl_img_insr mgl_fieldbod_extr mgl_script_extr
+tools = scriptrip scriptrip_jp tablerip strinsert pngcompare itemmaker blockcopy relsearch popencmp popshcmp vaycmp vaydecmp vayitems vaymonsters hucdism exilestats chngsrch ex2enemy alundat scriptrip_tss strinsert_tss stats_tss items_tss mapcp_tss lunardat mapcp_eb sampcm aluncmp mkr_enemies gearbolt_decmp lsss_extr gearbolt_cmp lsss_stats lsss_money lsss_txt l2eb_data l2eb_txt l2eb_grp l2eb_stats cf2_stats sjis_srch ccdtocue
 
 all: blackt copycat $(OBJ) $(tools)
 	
@@ -147,44 +147,11 @@ l2eb_stats: blackt $(OBJ)
 cf2_stats: blackt $(OBJ)
 	$(CXX) $(OBJ) src/cf2_stats.cpp -o cf2_stats $(CXXFLAGS)
 	
-mgl_transtxt: blackt $(OBJ)
-	$(CXX) -c $(OBJ) src/mgl_transtxt.cpp -o mgl_transtxt.o $(CXXFLAGS)
-	
 sjis_srch: blackt $(OBJ)
 	$(CXX) $(OBJ) src/sjis_srch.cpp -o sjis_srch $(CXXFLAGS)
 	
-mgl_strtab_extr: blackt $(OBJ) mgl_transtxt
-	$(CXX) $(OBJ) mgl_transtxt.o src/mgl_strtab_extr.cpp -o mgl_strtab_extr $(CXXFLAGS)
-	
-mgl_str_insr: blackt $(OBJ) mgl_transtxt
-	$(CXX) $(OBJ) mgl_transtxt.o src/mgl_str_insr.cpp -o mgl_str_insr $(CXXFLAGS)
-	
-mgl_str_fmtconv: blackt $(OBJ) mgl_transtxt
-	$(CXX) $(OBJ) mgl_transtxt.o src/mgl_str_fmtconv.cpp -o mgl_str_fmtconv $(CXXFLAGS)
-	
-mgl_img_decmp: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_img_decmp.cpp -o mgl_img_decmp $(CXXFLAGS)
-	
-mgl_img_cmp: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_img_cmp.cpp -o mgl_img_cmp $(CXXFLAGS)
-	
-mgl_img_inject: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_img_inject.cpp -o mgl_img_inject $(CXXFLAGS)
-	
-mgl_grp_conv: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_grp_conv.cpp -o mgl_grp_conv $(CXXFLAGS)
-	
-mgl_img_extr: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_img_extr.cpp -o mgl_img_extr $(CXXFLAGS)
-	
-mgl_img_insr: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_img_insr.cpp -o mgl_img_insr $(CXXFLAGS)
-	
-mgl_fieldbod_extr: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_fieldbod_extr.cpp -o mgl_fieldbod_extr $(CXXFLAGS)
-	
-mgl_script_extr: blackt $(OBJ)
-	$(CXX) $(OBJ) src/mgl_script_extr.cpp -o mgl_script_extr $(CXXFLAGS)
+ccdtocue: blackt $(OBJ)
+	$(CXX) $(OBJ) src/ccdtocue.cpp -o ccdtocue $(CXXFLAGS)
 
 -include $(DEP)
 
