@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstring>
 #include "util/ByteConversion.h"
 #include "util/TStringConversion.h"
 #include "util/TSerialize.h"
@@ -55,7 +56,9 @@ void createDirectoryForFile(string name) {
 }
 
 char* get_opt(char** begin, char** end, const std::string option) {
-  char** idx = std::find(begin, end, option);
+  char** idx = begin;
+  while ((idx != end) && (strcmp(*idx, option.c_str()) != 0)) ++idx;
+  
   if (idx != end && ++idx != end) {
     return *idx;
   } else {
