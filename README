@@ -77,19 +77,6 @@ l2eb_grp: Primitive and unfinished graphics extractor.
 l2eb_stats: Compares enemy stat tables.
 l2eb_txt: Extracts text from US version of the game.
 
-*** MAHOU GAKUEN LUNAR! ***
-mgl_fieldbod_extr: Extractor for overworld character potraits in FIELD.BOD.
-mgl_grp_conv: Graphic conversion utility.
-mgl_img_decmp: Decompressor for image data.
-mgl_img_cmp: Compressor for image data.
-mgl_img_extr: Image extraction utility.
-mgl_img_inject: Image insertion utility.
-mgl_img_insr: Better image insertion utility.
-mgl_script_extr: Dialogue extractor.
-mgl_str_fmtconv: Tiny tool to convert from old translation file format.
-mgl_str_insr: String insertion utility.
-mgl_strtab_extr: Extracts string pointer tables. See mgl_strtab.txt.
-
 *** MAGIC KNIGHT RAYEARTH ***
 mkr_enemies: Reads and compares enemy stat structs for relevant changes.
 
